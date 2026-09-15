@@ -1,0 +1,21 @@
+{
+  "summary": {
+    "target": "models/qwen38-27b-exl3",
+    "draft": "mtp",
+    "n": 1,
+    "mean_acceptance_length": 4.266666666666667,
+    "mean_tok_per_s": 10.88132551089365,
+    "hit_token_cap": 1
+  },
+  "per_request": [
+    {
+      "new_tokens": 64,
+      "accepted_draft_tokens": 49,
+      "rejected_draft_tokens": 0,
+      "rounds": 15,
+      "acceptance_length": 4.266666666666667,
+      "tok_per_s": 10.88132551089365,
+      "time": 5.881636381149292
+    }
+  ]
+}

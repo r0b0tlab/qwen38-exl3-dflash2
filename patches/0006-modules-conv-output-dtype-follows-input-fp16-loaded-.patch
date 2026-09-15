@@ -1,0 +1,35 @@
+From b8e1a003e117a11aba76ecfbcf40fa6de8bd865c Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 13:48:43 -0500
+Subject: [PATCH 6/8] modules: conv output dtype follows input (fp16
+ loaded-model path)
+
+---
+ exllamav3/modules/arch_specific/dflash2.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/exllamav3/modules/arch_specific/dflash2.py b/exllamav3/modules/arch_specific/dflash2.py
+index d675209..cd3d70d 100644
+--- a/exllamav3/modules/arch_specific/dflash2.py
++++ b/exllamav3/modules/arch_specific/dflash2.py
+@@ -193,15 +193,18 @@ class GroupedDynamicCausalConv(Module):
+         proj = self.kernel_projection.forward(hidden, params, out_dtype = torch.float)
+         groups = hidden.shape[-1] // self.group_size
+         dynamic = proj.view(*hidden.shape[:-1], 2, self.kernel_size, groups)
++        # The projection runs in fp32 (dynamic deltas are small); the sublayer consuming
++        # this output is fp16 (EXL3 GEMMs require kHalf), so cast the conv result back
++        # on the way out.
+         return (
+-            grouped_dynamic_convolve(hidden, dynamic[..., 0, :, :], self.base_kernel[0], self.group_size),
++            grouped_dynamic_convolve(hidden, dynamic[..., 0, :, :], self.base_kernel[0], self.group_size).to(hidden.dtype),
+             dynamic[..., 1, :, :],
+         )
+ 
+ 
+     def finish(self, hidden: torch.Tensor, dynamic: torch.Tensor, params: dict) -> torch.Tensor:
+         assert self.base_kernel is not None, "GroupedDynamicCausalConv not loaded"
+-        return grouped_dynamic_convolve(hidden, dynamic, self.base_kernel[1], self.group_size)
++        return grouped_dynamic_convolve(hidden, dynamic, self.base_kernel[1], self.group_size).to(hidden.dtype)
+ 
+ 
+     @override

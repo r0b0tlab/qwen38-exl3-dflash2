@@ -1,0 +1,796 @@
+From d2eb0179f21c0c9ac139725dbf3a86ccee6d7f9a Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 11:37:16 -0500
+Subject: [PATCH 3/8] generator: q-aware DFlash2 rejection verify + propose
+ wiring
+
+---
+ exllamav3/architecture/dflash2.py | 186 +++++++++++++++++++++++++++-
+ exllamav3/generator/generator.py  | 194 +++++++++++++++++++++++++++++-
+ tests/ntest_dflash2_load.py       | 117 ++++++++++++++++++
+ tests/ntest_dflash2_verify.py     | 193 +++++++++++++++++++++++++++++
+ 4 files changed, 686 insertions(+), 4 deletions(-)
+ create mode 100644 tests/ntest_dflash2_load.py
+ create mode 100644 tests/ntest_dflash2_verify.py
+
+diff --git a/exllamav3/architecture/dflash2.py b/exllamav3/architecture/dflash2.py
+index 40c1b41..fbc9337 100644
+--- a/exllamav3/architecture/dflash2.py
++++ b/exllamav3/architecture/dflash2.py
+@@ -1,6 +1,14 @@
+ from __future__ import annotations
++from typing_extensions import override
++import torch
++import weakref
++
+ from .dflash import DFlashConfig, DFlashModel
+ from ..model.config import no_default
++from ..modules import RMSNorm, Attention, GatedMLP
++from ..modules.transformer import TransformerBlock
++from ..modules.arch_specific.dflash2 import GroupedDynamicCausalConv, CandidateSelector
++from ..util.tensor import to2
+ 
+ 
+ class DFlash2Config(DFlashConfig):
+@@ -35,6 +43,98 @@ class DFlash2Config(DFlashConfig):
+         self.selector_top_k = self.read_cfg(int, ["dflash_config->selector_top_k", "selector_top_k"], no_default)
+ 
+ 
++class DFlash2Block(TransformerBlock):
++    """
++    TransformerBlock with DFlash 2 grouped dynamic convolutions wrapped around the
++    attention and MLP sublayers (prepare before the sublayer, finish after). The
++    residual/norm/export-state semantics are identical to TransformerBlock.
++    """
++
++    def __init__(
++        self,
++        *args,
++        attention_conv: GroupedDynamicCausalConv | None = None,
++        mlp_conv: GroupedDynamicCausalConv | None = None,
++        **kwargs,
++    ):
++        super().__init__(*args, **kwargs)
++        self.attention_conv = attention_conv
++        self.mlp_conv = mlp_conv
++        self.register_submodule(self.attention_conv)
++        self.register_submodule(self.mlp_conv)
++
++
++    @override
++    def forward(
++        self,
++        x: torch.Tensor,
++        params: dict,
++        out_dtype: torch.dtype | None = None
++    ) -> torch.Tensor:
++
++        export_state = params.get("export_state_layers")
++        export_state = export_state and self.layer_idx in export_state and params.get("layer_instance", 0) == 0
++
++        y_resid = None  # pending attn output whose residual add is folded into the MLP input norm
++
++        if self.attn:
++            assert not self.attn_hc, "DFlash2Block does not support hyperconnections"
++            if self.attn_norm:
++                y = self.attn_norm.forward(x, params, out_dtype = torch.half)
++            else:
++                y = x.half()
++            attn_dyn = None
++            if self.attention_conv is not None:
++                y, attn_dyn = self.attention_conv.prepare(y, params)
++            y = self.attn.forward(y, params)
++            if params.get("prefill") and not export_state:
++                return x
++            if self.attention_conv is not None:
++                y = self.attention_conv.finish(y, attn_dyn, params)
++            if self.attn_post_norm:
++                self.attn_post_norm.forward(y, params, residual = x)
++            elif self.mlp is not None and self.mlp_norm is not None and self.mlp_norm.can_fuse_residual(x, y):
++                y_resid = y
++            else:
++                x += y
++
++        if self.mlp:
++            assert not self.mlp_hc, "DFlash2Block does not support hyperconnections"
++            params["residual"] = x
++            if y_resid is not None:
++                y = self.mlp_norm.forward(y_resid, params, out_dtype = torch.half, residual_in = x)
++            elif self.mlp_norm:
++                y = self.mlp_norm.forward(x, params, out_dtype = torch.half)
++            else:
++                y = x.half()
++            mlp_dyn = None
++            if self.mlp_conv is not None:
++                y, mlp_dyn = self.mlp_conv.prepare(y, params)
++            y = self.mlp.forward(y, params)
++            if self.mlp_conv is not None:
++                y = self.mlp_conv.finish(y, mlp_dyn, params)
++            if self.mlp_post_norm:
++                self.mlp_post_norm.forward(y, params, residual = x)
++            else:
++                x += y
++
++        if export_state:
++            s = params.get("export_states")
++            if not s:
++                s = params["export_states"] = []
++            if x.dtype == torch.half:
++                s.append(x.clamp_(-65504.0, 65504.0))
++            else:
++                x_ = x.half()
++                x_.clamp_(-65504.0, 65504.0)
++                s.append(x_)
++
++        if self.layer_scalar_f is not None:
++            x *= self.layer_scalar_f
++
++        return to2(x, out_dtype, self.out_dtype)
++
++
+ class DFlash2Model(DFlashModel):
+     """
+     DFlash 2 draft. v1 backbone (fc + SWA layers + shared target head) plus:
+@@ -52,10 +152,92 @@ class DFlash2Model(DFlashModel):
+         config: DFlash2Config,
+         **kwargs
+     ):
++        # Build the v1 backbone by running the parent init against a model class that
++        # builds DFlash2Blocks. The parent hardcodes TransformerBlock, so construct the
++        # module list manually here instead (keeps DFlashModel untouched).
+         super().__init__(config, **kwargs)
++
++        # The parent built plain TransformerBlocks; rebuild as DFlash2Blocks with convs.
++        # Replace the block modules in-place at the same module-list positions so the
++        # loader's per-module layout (first_block_idx .. last_kv_module_idx) is preserved.
++        from ..modules.arch_specific.dflash import DFlashInputLayer
++
++        # Rebuild blocks: un-register parent blocks and append DFlash2Blocks in identical order
++        # (module list order is the load order)
++        parent_blocks = self.modules[self.first_block_idx : self.last_kv_module_idx + 1]
++        assert len(parent_blocks) == config.num_hidden_layers
++
++        new_blocks = []
++        for idx in range(config.num_hidden_layers):
++            parent_block = parent_blocks[idx]
++            is_swa = config.layer_types[idx] == "sliding_attention"
++            attn_conv = GroupedDynamicCausalConv(
++                config = config,
++                key = f"layers.{idx}.attention_conv",
++                hidden_size = config.hidden_size,
++                kernel_size = config.conv_kernel_size,
++                group_size = config.conv_group_size,
++            )
++            mlp_conv = GroupedDynamicCausalConv(
++                config = config,
++                key = f"layers.{idx}.mlp_conv",
++                hidden_size = config.hidden_size,
++                kernel_size = config.conv_kernel_size,
++                group_size = config.conv_group_size,
++            )
++            block = DFlash2Block(
++                config = config,
++                key = f"layers.{idx}",
++                layer_idx = idx,
++                attn_norm = parent_block.attn_norm,
++                attn = parent_block.attn,
++                mlp_norm = parent_block.mlp_norm,
++                mlp = parent_block.mlp,
++                attention_conv = attn_conv,
++                mlp_conv = mlp_conv,
++            )
++            new_blocks.append(block)
++
++        self.modules[self.first_block_idx : self.last_kv_module_idx + 1] = new_blocks
++        self.attn_modules = [b.attn for b in new_blocks]
++
++        self.candidate_selector = CandidateSelector(
++            config = config,
++            key = "candidate_selector",
++            vocab_size = config.vocab_size,
++            hidden_size = config.hidden_size,
++            rank = config.selector_rank,
++            top_k = config.selector_top_k,
++        )
++        self.modules.append(self.candidate_selector)
++
+         self.caps.update({
+             "dflash2_draft": True,
+         })
+ 
+-    # Conv/selector wiring, propose(), and the fp16 exclusion set land with the module
+-    # implementation (Tasks 2.3-2.5).
++
++    def propose(
++        self,
++        out_state: torch.Tensor,
++        anchor_ids: torch.Tensor,
++        params: dict,
++        temperature: float,
++    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
++        """
++        Run the candidate selector over the draft block states.
++
++        out_state: (batch, block_size, hidden) full block states; position 0 is the
++        anchor token position and positions 1: are the mask positions whose predictions
++        form the draft. anchor_ids: (batch,) the last verified token ids. Returns
++        (path tokens (batch, block_size - 1), candidates (batch, block_size - 1, k),
++        q (batch, block_size - 1, k) or None for greedy).
++        """
++        assert not self.loaded_tp, "DFlash2 drafting is not supported with tensor parallelism"
++        target = self.attached_model()
++        hidden = out_state[:, 1:, :]
++        ll = target.logit_layer_idx
++        lm = target.modules[ll]
++        logits = lm.prepare_for_device(hidden, params)
++        logits = lm.forward(logits, params)
++        logits = logits[..., : target.config.vocab_size]
++        return self.candidate_selector.select(hidden, logits, anchor_ids, temperature)
+diff --git a/exllamav3/generator/generator.py b/exllamav3/generator/generator.py
+index 45042ef..819cfb9 100644
+--- a/exllamav3/generator/generator.py
++++ b/exllamav3/generator/generator.py
+@@ -23,6 +23,82 @@ import threading
+ from ..tokenizer import MMEmbedding
+ from ..util import profile_opt
+ 
++
++def _dflash2_sampler_params(sampler):
++    """
++    Extract (greedy, temperature, top_k, top_p) from a job sampler if it is a plain
++    temperature / top-k / top-p sampler (fused or not) with no penalties, min-p, or
++    adaptive steps. Returns None for anything else — the q-aware DFlash2 verify only
++    runs for samplers whose target distribution we can reproduce exactly.
++    """
++    from .sampler.custom import (
++        SS_Fused,
++        SS_Temperature,
++        SS_TopK,
++        SS_TopP,
++        SS_MinP,
++        SS_Sample,
++        SS_Argmax,
++        SS_NoOp,
++    )
++    steps = getattr(sampler, "steps", None)
++    if steps is None:
++        return None
++    if len(steps) == 1 and isinstance(steps[0], SS_Fused):
++        f = steps[0]
++        if f.mode == SS_Fused.MODE_GREEDY:
++            return (True, 0.0, 0, 1.0)
++        if f.minp_log:
++            return None
++        return (False, 1.0 / f.inv_temp, f.top_k, f.top_p)
++    greedy = False
++    temperature = 1.0
++    top_k = 0
++    top_p = 1.0
++    for s in steps:
++        if isinstance(s, SS_NoOp):
++            continue
++        if isinstance(s, SS_Argmax):
++            greedy = True
++        elif isinstance(s, SS_Temperature):
++            temperature *= s.temperature
++        elif isinstance(s, SS_TopK):
++            top_k = s.top_k
++        elif isinstance(s, SS_TopP):
++            top_p = s.top_p
++        elif isinstance(s, SS_MinP):
++            if s.min_p != 0.0:
++                return None
++        elif isinstance(s, SS_Sample):
++            continue
++        else:
++            return None
++    if greedy:
++        return (True, 0.0, 0, 1.0)
++    return (False, temperature, top_k, top_p)
++
++
++def _dflash2_sampling_dist(logits: torch.Tensor, temperature: float, top_k: int, top_p: float) -> torch.Tensor:
++    """
++    Target sampling distribution p over the vocabulary for a plain
++    temperature/top-k/top-p sampler (same transform as the reference DFlash2
++    rejection sampler). logits: (..., vocab) raw target logits.
++    """
++    scores = logits.float() / temperature
++    indices = None
++    vocab_size = scores.shape[-1]
++    if 0 < top_k < vocab_size:
++        scores, indices = torch.topk(scores, top_k, dim = -1)
++    probs = torch.softmax(scores, dim = -1)
++    if top_p < 1.0:
++        sorted_probs, order = probs.sort(dim = -1, descending = True)
++        keep = sorted_probs.cumsum(dim = -1) - sorted_probs < top_p
++        probs = torch.zeros_like(probs).scatter(-1, order, sorted_probs * keep)
++        probs = probs / probs.sum(dim = -1, keepdim = True)
++    if indices is not None:
++        probs = torch.zeros_like(logits, dtype = probs.dtype).scatter(-1, indices, probs)
++    return probs
++
+ class Generator:
+ 
+     def __init__(
+@@ -249,6 +325,9 @@ class Generator:
+             draft_model.attach_to(model)
+         self.dflash_draft = self.draft_model is not None and self.draft_model.caps.get("dflash_draft", False)
+         self.mtp_draft = self.draft_model is not None and self.draft_model.caps.get("mtp_draft", False)
++        self.dflash2_draft = self.dflash_draft and self.draft_model.caps.get("dflash2_draft", False)
++        self._dflash2_propose = None
++        self._dflash2_sampling = None
+ 
+         # Confidence-calibrated draft truncation (draft model + dynamic draft, any mode). For
+         # DFlash the fixed-size drafted block is truncated before verification; for AR draft
+@@ -840,13 +919,45 @@ class Generator:
+             "cache": self.draft_cache,
+             "cache_seqlens": cache_seqlens,
+         }
++        self._dflash2_propose = None
++        self._dflash2_sampling = None
+         if self.draft_calibrator is not None:
+             params["export_draft_conf"] = True
+         out_state = self.draft_model.forward(
+             input_ids = batch_ids,
+             params = params,
+         )
+-        new_ids = self.draft_model.sample_from_state(out_state, params)
++        if self.dflash2_draft:
++            # Consensus sampling params across active jobs: the selector walk runs sampled only
++            # when every job uses the same plain temperature/top-k/top-p sampler; otherwise it
++            # falls back to the greedy walk (token-match verify, as DFlash v1).
++            sampling = None
++            for job in self.active_jobs:
++                if not job.is_prefill_done(): continue
++                ps = _dflash2_sampler_params(job.sampler)
++                if ps is None:
++                    sampling = None
++                    break
++                if sampling is None:
++                    sampling = ps
++                elif ps != sampling:
++                    sampling = None
++                    break
++            walk_greedy = sampling is None or sampling[0]
++            temperature = 0.0 if walk_greedy else sampling[1]
++            if not walk_greedy:
++                self._dflash2_sampling = sampling
++            path, candidates, q = self.draft_model.propose(
++                out_state,
++                batch_ids[:, 0],
++                params,
++                temperature,
++            )
++            new_ids = path  # positions 1..block_size-1 already cropped by propose()
++            if q is not None:
++                self._dflash2_propose = {"candidates": candidates, "q": q}
++        else:
++            new_ids = self.draft_model.sample_from_state(out_state, params)
+ 
+         # Draft models with a confidence head cap the usable draft length per round;
+         # 0 means no draft position cleared the threshold, so skip drafting entirely
+@@ -882,6 +993,42 @@ class Generator:
+         return self.draft_ids_pinned[:, :window]
+ 
+ 
++    def _dflash2_accept(self, job, j, i, token_logits, draft_tokens):
++        """
++        One position of the q-aware DFlash2 rejection sampler. Returns
++        (accepted, bonus): accepted with no bonus, or rejected with one bonus token
++        sampled from the normalized (p - q)+ residual distribution. p is the target
++        sampling distribution at position i, q the selector's proposal distribution
++        over its candidate list.
++        """
++        prop = self._dflash2_propose
++        _, temperature, top_k, top_p = self._dflash2_sampling
++        d = draft_tokens[j, i]
++        candidates = prop["candidates"][j, i]
++        q = prop["q"][j, i]
++        match = (candidates == d).nonzero(as_tuple = True)[0]
++        if match.numel():
++            q_d = q[match[0]]
++        else:
++            q_d = torch.zeros((), dtype = q.dtype, device = q.device)
++        p = _dflash2_sampling_dist(token_logits, temperature, top_k, top_p)
++        p_d = p[0, 0, d]
++        u = torch.rand((), device = p.device, dtype = torch.float)
++        if float(u * q_d) < float(p_d):
++            return True, None
++
++        residual = p[0, 0].clone()
++        residual.index_add_(0, candidates.long(), -q.to(residual.dtype))
++        residual.clamp_min_(0)
++        total = residual.sum()
++        if float(total) <= 0:
++            bonus_dist = p[0, 0]
++        else:
++            bonus_dist = residual / total
++        bonus = torch.multinomial(bonus_dist, 1)[0]
++        return False, bonus
++
++
+     def iterate_ngram_gen(self, results: list):
+ 
+         # Get shape of active batch
+@@ -1151,6 +1298,27 @@ class Generator:
+                     next_token, next_k_tokens, next_k_probs, next_prob = job.receive_logits(
+                         token_logits,
+                     )
++
++                    # DFlash2 q-aware rejection (sampled samplers only): accept draft token d with
++                    # probability p(d)/q(d); on reject, the committed output is one sample from the
++                    # normalized (p - q)+ residual. Decided before receive_sample so the output
++                    # token is the forced one. Lossless w.r.t. the quantized target model, whose
++                    # lm_head produces both p (here) and q (draft propose).
++                    dflash2_q = (
++                        draft_tokens is not None
++                        and i < batch_logits.shape[1] - 1
++                        and self._dflash2_propose is not None
++                        and self._dflash2_sampling is not None
++                    )
++                    dflash2_reject = False
++                    if dflash2_q:
++                        accepted_, bonus = self._dflash2_accept(job, j, i, token_logits, draft_tokens)
++                        if accepted_:
++                            next_token = draft_tokens[j, i].reshape(next_token.shape)
++                        else:
++                            next_token = bonus.reshape(next_token.shape)
++                            dflash2_reject = True
++
+                     eos, sampled_token, rq = job.receive_sample(
+                         token_logits,
+                         next_token,
+@@ -1205,7 +1373,29 @@ class Generator:
+                     # draft acceptance so state can be stashed at an exact page boundary.
+                     if draft_tokens is not None and i < batch_logits.shape[1] - 1:
+                         cp_boundary = batch_states is not None and job.is_checkpoint_boundary()
+-                        if draft_tokens[j, i].item() != sampled_token.item() or cp_boundary:
++                        if dflash2_q:
++                            if cp_boundary or dflash2_reject:
++                                rejected = reject_remainder(job, j, i, batch_states)
++                                break
++
++                            # Accept draft token
++                            job.accepted_draft_tokens += 1
++                            accepted_length += 1
++
++                            # Advance filters
++                            for f in job.filters:
++                                if not f.is_active: continue
++                                if f.use_background_worker():
++                                    job.filter_futures.append(self.filter_pool.submit(f.get_next_logit_mask))
++                                else:
++                                    job.logit_masks.append(f.get_next_logit_mask())
++                                    job.filter_futures.append(None)
++
++                            # Update masks and past IDs
++                            job.prepare_logit_mask()
++                            job.prepare_sampling_past_ids()
++
++                        elif draft_tokens[j, i].item() != sampled_token.item() or cp_boundary:
+                             rejected = reject_remainder(job, j, i, batch_states)
+                             break
+ 
+diff --git a/tests/ntest_dflash2_load.py b/tests/ntest_dflash2_load.py
+new file mode 100644
+index 0000000..96ddfd5
+--- /dev/null
++++ b/tests/ntest_dflash2_load.py
+@@ -0,0 +1,117 @@
++import os
++
++import pytest
++import torch
++
++from ntest_dflash2_config import DFLASH2_HF_DIR, requires_dflash2_hf
++
++requires_weights = pytest.mark.skipif(
++    not any(f.endswith(".safetensors") for f in os.listdir(DFLASH2_HF_DIR)),
++    reason = "DFlash2 safetensors not downloaded yet",
++)
++
++
++@requires_dflash2_hf
++@requires_weights
++def test_load_real_dflash2_checkpoint():
++    from exllamav3 import Config, Model
++    cfg = Config.from_directory(DFLASH2_HF_DIR)
++    assert cfg.arch_string == "DFlash2DraftModel"
++    model = Model.from_config(cfg)
++    model.load(progressbar = False)
++
++    assert model.caps.get("dflash2_draft") is True
++    assert model.caps.get("dflash_draft") is True
++    assert model.caps.get("default_draft_size") == 7
++
++    # every block must carry both convs with loaded tensors
++    blocks = model.modules[model.first_block_idx : model.last_kv_module_idx + 1]
++    assert len(blocks) == 5
++    for b in blocks:
++        assert b.attention_conv.base_kernel is not None
++        assert b.attention_conv.base_kernel.shape == (2, 2, 5120)
++        assert b.mlp_conv.base_kernel is not None
++        assert b.attention_conv.kernel_projection.device is not None
++
++    # selector codebooks loaded
++    sel = model.candidate_selector
++    assert sel.predecessor_codebook.shape == (248320, 256)
++    assert sel.successor_codebook.shape == (248320, 256)
++
++    # parameter count in the expected ~2B band
++    n = sum(m.weights_numel() for m in model.modules)
++    assert 1.8e9 < n < 2.4e9
++
++    model.unload()
++
++
++@requires_dflash2_hf
++@requires_weights
++def test_propose_shapes_with_stub_target_head():
++    """
++    Selector integration smoke: attach a stub target whose lm_head is an identity-ish
++    projection, run propose() on fixed block states, and check output shapes and the
++    greedy path degenerating to per-position argmax of the head logits when the
++    codebooks are zeroed.
++    """
++    from exllamav3 import Config, Model
++    cfg = Config.from_directory(DFLASH2_HF_DIR)
++    model = Model.from_config(cfg)
++    model.load(progressbar = False)
++
++    # zero the codebooks and projection so edge scores vanish: the greedy walk must
++    # then pick the head-logit argmax candidate at every position
++    with torch.no_grad():
++        sel = model.candidate_selector
++        sel.predecessor_codebook.zero_()
++        sel.successor_codebook.zero_()
++
++    class _StubTarget:
++        class _Cfg:
++            vocab_size = 248320
++        config = _Cfg()
++        loaded_tp = False
++        logit_layer_idx = 0
++
++        def __init__(self, vocab, hidden):
++            self.vocab = vocab
++            self.hidden = hidden
++            self.modules = [_StubHead(vocab, hidden)]
++
++    class _StubHead:
++        # vocab == hidden for the shape trick below is too restrictive; instead map
++        # hidden -> vocab with a fixed random projection and fp32 output
++        def __init__(self, vocab, hidden):
++            torch.manual_seed(0)
++            self.w = torch.randn(vocab, hidden, dtype = torch.float16, device = "cuda") * 0.02
++            self.device = self.w.device
++
++        def prepare_for_device(self, x, params):
++            return x
++
++        def forward(self, x, params):
++            return torch.nn.functional.linear(x, self.w.float())
++
++    model.attached_model = lambda: _StubTarget(248320, 5120)
++
++    B, T, H = 1, 8, 5120
++    torch.manual_seed(1)
++    out_state = torch.randn(B, T, H, dtype = torch.float16, device = "cuda")
++    anchor = torch.tensor([123], dtype = torch.long, device = "cuda")
++
++    path, candidates, q = model.propose(out_state, anchor, {}, 0.0)
++    assert path.shape == (B, T - 1)
++    assert candidates.shape == (B, T - 1, cfg.selector_top_k)
++    assert q is None
++
++    # with zeroed codebooks, path must equal the argmax of the stub head over the
++    # candidate set at each position
++    head = model.attached_model().modules[0]
++    logits = torch.nn.functional.linear(out_state[:, 1:].float(), head.w.float())
++    for pos in range(T - 1):
++        _, cand_pos = torch.topk(logits[:, pos], cfg.selector_top_k, dim = -1, sorted = False)
++        # greedy walk with zero edge scores picks the highest-unary candidate
++        best = cand_pos[0, torch.argmax(logits[0, pos, cand_pos[0]])]
++        assert path[0, pos].item() == best.item()
++
++    model.unload()
+diff --git a/tests/ntest_dflash2_verify.py b/tests/ntest_dflash2_verify.py
+new file mode 100644
+index 0000000..0656cee
+--- /dev/null
++++ b/tests/ntest_dflash2_verify.py
+@@ -0,0 +1,193 @@
++"""
++Tests for the DFlash2 q-aware verify path in the generator: sampler
++introspection, target-distribution construction, and the rejection sampler.
++"""
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++pytestmark = pytest.mark.skipif(
++    pytest.importorskip("dflash.model", reason="reference dflash package not installed") is None,
++    reason="reference dflash package not installed",
++)
++
++from dflash.model import _sampling_probs as ref_sampling_probs  # noqa: E402
++
++from exllamav3.generator.generator import (  # noqa: E402
++    _dflash2_sampler_params,
++    _dflash2_sampling_dist,
++    Generator,
++)
++
++
++# ---------------------------------------------------------------------------
++# _dflash2_sampler_params
++# ---------------------------------------------------------------------------
++
++def test_sampler_params_default_sampler_ineligible_min_p():
++    # DefaultSampler is [MinP(0.08), Temperature(0.8), Sample] — min-p excludes it
++    from exllamav3.generator.sampler.presets import DefaultSampler
++    assert _dflash2_sampler_params(DefaultSampler()) is None
++
++
++def test_sampler_params_plain_samplers_eligible():
++    from exllamav3.generator.sampler.presets import CategoricalSampler, TopPSampler
++    ps = _dflash2_sampler_params(CategoricalSampler(temperature = 1.0))
++    assert ps == (False, 1.0, 0, 1.0)
++    ps = _dflash2_sampler_params(TopPSampler(top_p = 0.9, temperature = 0.7))
++    assert ps == (False, 0.7, 0, 0.9)
++
++
++def test_sampler_params_plain_combo_eligible():
++    from exllamav3.generator.sampler.presets import ComboSampler
++    sampler = ComboSampler(temperature = 1.0, top_p = 0.95, top_k = 20)
++    ps = _dflash2_sampler_params(sampler)
++    assert ps == (False, 1.0, 20, 0.95)
++
++
++def test_sampler_params_greedy_combo():
++    from exllamav3.generator.sampler.presets import ComboSampler
++    sampler = ComboSampler(temperature = 0.0)
++    ps = _dflash2_sampler_params(sampler)
++    assert ps is not None and ps[0] is True
++
++
++def test_sampler_params_penalties_ineligible():
++    from exllamav3.generator.sampler.presets import ComboSampler
++    sampler = ComboSampler(temperature = 1.0, rep_p = 1.5)
++    assert _dflash2_sampler_params(sampler) is None
++
++
++def test_sampler_params_min_p_ineligible():
++    from exllamav3.generator.sampler.presets import ComboSampler
++    sampler = ComboSampler(temperature = 1.0, min_p = 0.08)
++    assert _dflash2_sampler_params(sampler) is None
++
++
++# ---------------------------------------------------------------------------
++# _dflash2_sampling_dist vs the reference transform
++# ---------------------------------------------------------------------------
++
++@pytest.mark.parametrize("temperature,top_k,top_p", [
++    (1.0, 0, 1.0),
++    (0.7, 0, 1.0),
++    (1.0, 20, 1.0),
++    (1.0, 0, 0.95),
++    (1.0, 20, 0.95),
++    (0.85, 50, 0.9),
++])
++def test_sampling_dist_matches_reference(temperature, top_k, top_p):
++    torch.manual_seed(11)
++    logits = torch.randn(1, 1, 500)
++    ours = _dflash2_sampling_dist(logits, temperature, top_k, top_p)
++    ref = ref_sampling_probs(logits, temperature, top_p, top_k)
++    assert torch.allclose(ours, ref, atol = 1e-6, rtol = 1e-5)
++
++
++# ---------------------------------------------------------------------------
++# _dflash2_accept
++# ---------------------------------------------------------------------------
++
++def _stub_gen(candidates, q, sampling):
++    g = SimpleNamespace()
++    g._dflash2_propose = {"candidates": candidates, "q": q}
++    g._dflash2_sampling = sampling  # (greedy, temperature, top_k, top_p)
++    return g
++
++
++def _fixed_case(vocab=64, K=4, W=3):
++    torch.manual_seed(21)
++    # draft tokens row 0: positions 0..W-1
++    draft_tokens = torch.randint(0, vocab, (1, W))
++    # candidate lists: ensure position 0 includes the draft token at index 1
++    candidates = torch.stack([
++        torch.randperm(vocab)[:K] for _ in range(W)
++    ]).unsqueeze(0)
++    candidates[0, 0, 1] = draft_tokens[0, 0]
++    q = torch.rand(1, W, K)
++    q = q / q.sum(-1, keepdim = True)
++    logits = torch.randn(1, 1, vocab)
++    return draft_tokens, candidates, q, logits
++
++
++def test_accept_always_when_p_covers_draft_token():
++    # p puts all mass on the draft token at position 0 -> u*q_d < 1 for every u -> accept
++    draft_tokens, candidates, q, _ = _fixed_case()
++    logits = torch.full((1, 1, 64), -30.0)
++    logits[0, 0, draft_tokens[0, 0]] = 30.0
++    g = _stub_gen(candidates, q, (False, 1.0, 0, 1.0))
++    for _ in range(20):
++        accepted, bonus = Generator._dflash2_accept(g, None, 0, 0, logits, draft_tokens)
++        assert accepted and bonus is None
++
++
++def test_impossible_event_q_zero_p_positive_always_accepts():
++    # q_d = 0 (draft token not among the selector's candidates — impossible under a
++    # correct walk) and p_d > 0: the acceptance test u*q_d < p_d degenerates to
++    # accept, matching the reference _rejection_sample for this impossible event.
++    draft_tokens, candidates, q, _ = _fixed_case()
++    candidates[0, 0, :] = torch.arange(40, 44)
++    draft_tokens[0, 0] = 7
++    logits = torch.randn(1, 1, 64)
++    g = _stub_gen(candidates, q, (False, 1.0, 0, 1.0))
++    for _ in range(20):
++        accepted, bonus = Generator._dflash2_accept(g, None, 0, 0, logits, draft_tokens)
++        assert accepted
++
++
++def test_reject_when_target_assigns_zero_to_draft_token():
++    # p_d = 0 via top-k truncation (draft token outside the kept set) -> always
++    # reject; the bonus comes from p itself
++    draft_tokens, candidates, q, _ = _fixed_case()
++    candidates[0, 0, :] = torch.arange(0, 4)
++    draft_tokens[0, 0] = 7
++    q[0, 0, :] = 0.25
++    logits = torch.full((1, 1, 64), 20.0)
++    logits[0, 0, 7] = -20.0
++    g = _stub_gen(candidates, q, (False, 1.0, 4, 1.0))  # top-4 keeps tokens 60..63-ish, excludes 7
++    torch.manual_seed(9)
++    for _ in range(20):
++        accepted, bonus = Generator._dflash2_accept(g, None, 0, 0, logits, draft_tokens)
++        assert not accepted
++        assert int(bonus) != 7
++
++
++def test_acceptance_rate_matches_p_over_q():
++    # q puts 0.8 on the draft token, p puts 0.4 -> acceptance rate ~ 0.5
++    draft_tokens, candidates, q, _ = _fixed_case()
++    K = candidates.shape[-1]
++    q[0, 0, :] = 0.05
++    q[0, 0, 1] = 0.85  # index 1 is the draft token at position 0
++    logits = torch.full((1, 1, 64), -12.0)
++    logits[0, 0, draft_tokens[0, 0]] = 0.0  # softmax mass ~ 0.42 on the draft token
++    p = torch.softmax(logits[0, 0], dim = -1)
++    ratio = float(p[draft_tokens[0, 0]] / 0.85)
++    g = _stub_gen(candidates, q, (False, 1.0, 0, 1.0))
++    torch.manual_seed(5)
++    accepts = sum(
++        Generator._dflash2_accept(g, None, 0, 0, logits, draft_tokens)[0]
++        for _ in range(400)
++    )
++    assert 0.65 * ratio * 400 < accepts < 1.35 * ratio * 400
++
++
++def test_bonus_comes_from_residual_not_from_q_mass():
++    # p uniform-ish, q concentrated on candidates that p discounts -> bonus must
++    # not be any candidate with q mass above its p mass
++    draft_tokens, candidates, q, _ = _fixed_case()
++    q[0, 0, :] = 0.25  # uniform over 4 candidates
++    # p heavily favors a token OUTSIDE the candidate list
++    logits = torch.full((1, 1, 64), -20.0)
++    outside = int(candidates[0, 0, 0])
++    while outside in candidates[0, 0].tolist():
++        outside = (outside + 1) % 64
++    logits[0, 0, outside] = 20.0
++    g = _stub_gen(candidates, q, (False, 1.0, 0, 1.0))
++    torch.manual_seed(6)
++    seen = set()
++    for _ in range(50):
++        accepted, bonus = Generator._dflash2_accept(g, None, 0, 0, logits, draft_tokens)
++        assert not accepted
++        seen.add(int(bonus))
++    assert seen == {outside}

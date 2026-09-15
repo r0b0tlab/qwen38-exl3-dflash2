@@ -1,0 +1,372 @@
+{
+  "summary": {
+    "target": "models/qwen38-27b-exl3",
+    "draft": "models/dflash2-hf",
+    "n": 40,
+    "mean_acceptance_length": 5.462592158500458,
+    "mean_tok_per_s": 139.94333014561033,
+    "hit_token_cap": 6
+  },
+  "per_request": [
+    {
+      "new_tokens": 207,
+      "accepted_draft_tokens": 168,
+      "rejected_draft_tokens": 0,
+      "rounds": 39,
+      "acceptance_length": 5.3076923076923075,
+      "tok_per_s": 83.86453451234122,
+      "time": 2.468266248703003
+    },
+    {
+      "new_tokens": 233,
+      "accepted_draft_tokens": 175,
+      "rejected_draft_tokens": 0,
+      "rounds": 58,
+      "acceptance_length": 4.017241379310345,
+      "tok_per_s": 107.9070151999311,
+      "time": 2.159266471862793
+    },
+    {
+      "new_tokens": 454,
+      "accepted_draft_tokens": 378,
+      "rejected_draft_tokens": 0,
+      "rounds": 76,
+      "acceptance_length": 5.973684210526316,
+      "tok_per_s": 158.34781429319244,
+      "time": 2.8671061992645264
+    },
+    {
+      "new_tokens": 172,
+      "accepted_draft_tokens": 142,
+      "rejected_draft_tokens": 0,
+      "rounds": 30,
+      "acceptance_length": 5.733333333333333,
+      "tok_per_s": 146.21034971543085,
+      "time": 1.1763873100280762
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 410,
+      "rejected_draft_tokens": 0,
+      "rounds": 102,
+      "acceptance_length": 5.019607843137255,
+      "tok_per_s": 130.95567133541164,
+      "time": 3.909719944000244
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 430,
+      "rejected_draft_tokens": 0,
+      "rounds": 82,
+      "acceptance_length": 6.2439024390243905,
+      "tok_per_s": 165.92235902518655,
+      "time": 3.085780620574951
+    },
+    {
+      "new_tokens": 145,
+      "accepted_draft_tokens": 117,
+      "rejected_draft_tokens": 0,
+      "rounds": 28,
+      "acceptance_length": 5.178571428571429,
+      "tok_per_s": 130.89210798004552,
+      "time": 1.1077826023101807
+    },
+    {
+      "new_tokens": 417,
+      "accepted_draft_tokens": 342,
+      "rejected_draft_tokens": 0,
+      "rounds": 75,
+      "acceptance_length": 5.56,
+      "tok_per_s": 145.95351634092958,
+      "time": 2.857074022293091
+    },
+    {
+      "new_tokens": 408,
+      "accepted_draft_tokens": 340,
+      "rejected_draft_tokens": 0,
+      "rounds": 68,
+      "acceptance_length": 6.0,
+      "tok_per_s": 153.26440670224346,
+      "time": 2.6620662212371826
+    },
+    {
+      "new_tokens": 353,
+      "accepted_draft_tokens": 296,
+      "rejected_draft_tokens": 0,
+      "rounds": 57,
+      "acceptance_length": 6.192982456140351,
+      "tok_per_s": 160.28606516629338,
+      "time": 2.202312469482422
+    },
+    {
+      "new_tokens": 230,
+      "accepted_draft_tokens": 191,
+      "rejected_draft_tokens": 0,
+      "rounds": 39,
+      "acceptance_length": 5.897435897435898,
+      "tok_per_s": 147.74880510906524,
+      "time": 1.5566961765289307
+    },
+    {
+      "new_tokens": 187,
+      "accepted_draft_tokens": 156,
+      "rejected_draft_tokens": 0,
+      "rounds": 31,
+      "acceptance_length": 6.032258064516129,
+      "tok_per_s": 146.25333577233454,
+      "time": 1.2786033153533936
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 394,
+      "rejected_draft_tokens": 0,
+      "rounds": 118,
+      "acceptance_length": 4.338983050847458,
+      "tok_per_s": 115.83628354456872,
+      "time": 4.420031309127808
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 421,
+      "rejected_draft_tokens": 0,
+      "rounds": 91,
+      "acceptance_length": 5.626373626373627,
+      "tok_per_s": 140.28608309650554,
+      "time": 3.6496849060058594
+    },
+    {
+      "new_tokens": 333,
+      "accepted_draft_tokens": 282,
+      "rejected_draft_tokens": 0,
+      "rounds": 51,
+      "acceptance_length": 6.529411764705882,
+      "tok_per_s": 169.29260074140944,
+      "time": 1.9670085906982422
+    },
+    {
+      "new_tokens": 348,
+      "accepted_draft_tokens": 285,
+      "rejected_draft_tokens": 0,
+      "rounds": 63,
+      "acceptance_length": 5.523809523809524,
+      "tok_per_s": 140.30930653864544,
+      "time": 2.4802346229553223
+    },
+    {
+      "new_tokens": 427,
+      "accepted_draft_tokens": 352,
+      "rejected_draft_tokens": 0,
+      "rounds": 75,
+      "acceptance_length": 5.693333333333333,
+      "tok_per_s": 149.67440076304396,
+      "time": 2.8528592586517334
+    },
+    {
+      "new_tokens": 507,
+      "accepted_draft_tokens": 409,
+      "rejected_draft_tokens": 0,
+      "rounds": 98,
+      "acceptance_length": 5.173469387755102,
+      "tok_per_s": 138.45708626357924,
+      "time": 3.6617844104766846
+    },
+    {
+      "new_tokens": 243,
+      "accepted_draft_tokens": 199,
+      "rejected_draft_tokens": 0,
+      "rounds": 44,
+      "acceptance_length": 5.5227272727272725,
+      "tok_per_s": 143.00709720598903,
+      "time": 1.699216365814209
+    },
+    {
+      "new_tokens": 481,
+      "accepted_draft_tokens": 381,
+      "rejected_draft_tokens": 0,
+      "rounds": 100,
+      "acceptance_length": 4.81,
+      "tok_per_s": 127.62028260590131,
+      "time": 3.768993377685547
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 428,
+      "rejected_draft_tokens": 0,
+      "rounds": 84,
+      "acceptance_length": 6.095238095238095,
+      "tok_per_s": 159.92856355575998,
+      "time": 3.2014293670654297
+    },
+    {
+      "new_tokens": 276,
+      "accepted_draft_tokens": 229,
+      "rejected_draft_tokens": 0,
+      "rounds": 47,
+      "acceptance_length": 5.872340425531915,
+      "tok_per_s": 151.2904866767995,
+      "time": 1.8243050575256348
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 364,
+      "rejected_draft_tokens": 0,
+      "rounds": 148,
+      "acceptance_length": 3.4594594594594597,
+      "tok_per_s": 93.18237606931659,
+      "time": 5.494601249694824
+    },
+    {
+      "new_tokens": 79,
+      "accepted_draft_tokens": 55,
+      "rejected_draft_tokens": 0,
+      "rounds": 24,
+      "acceptance_length": 3.2916666666666665,
+      "tok_per_s": 81.52790094514293,
+      "time": 0.9689934253692627
+    },
+    {
+      "new_tokens": 298,
+      "accepted_draft_tokens": 250,
+      "rejected_draft_tokens": 0,
+      "rounds": 48,
+      "acceptance_length": 6.208333333333333,
+      "tok_per_s": 162.94657908061765,
+      "time": 1.8288202285766602
+    },
+    {
+      "new_tokens": 470,
+      "accepted_draft_tokens": 370,
+      "rejected_draft_tokens": 0,
+      "rounds": 100,
+      "acceptance_length": 4.7,
+      "tok_per_s": 124.26370402271101,
+      "time": 3.7822790145874023
+    },
+    {
+      "new_tokens": 202,
+      "accepted_draft_tokens": 164,
+      "rejected_draft_tokens": 0,
+      "rounds": 38,
+      "acceptance_length": 5.315789473684211,
+      "tok_per_s": 132.19570438944655,
+      "time": 1.5280375480651855
+    },
+    {
+      "new_tokens": 297,
+      "accepted_draft_tokens": 244,
+      "rejected_draft_tokens": 0,
+      "rounds": 53,
+      "acceptance_length": 5.60377358490566,
+      "tok_per_s": 145.75065863485298,
+      "time": 2.037726640701294
+    },
+    {
+      "new_tokens": 358,
+      "accepted_draft_tokens": 276,
+      "rejected_draft_tokens": 0,
+      "rounds": 82,
+      "acceptance_length": 4.365853658536586,
+      "tok_per_s": 115.3637758436273,
+      "time": 3.103227138519287
+    },
+    {
+      "new_tokens": 253,
+      "accepted_draft_tokens": 204,
+      "rejected_draft_tokens": 0,
+      "rounds": 49,
+      "acceptance_length": 5.163265306122449,
+      "tok_per_s": 131.74746613442537,
+      "time": 1.9203405380249023
+    },
+    {
+      "new_tokens": 312,
+      "accepted_draft_tokens": 262,
+      "rejected_draft_tokens": 0,
+      "rounds": 50,
+      "acceptance_length": 6.24,
+      "tok_per_s": 164.4657448819634,
+      "time": 1.8970515727996826
+    },
+    {
+      "new_tokens": 292,
+      "accepted_draft_tokens": 246,
+      "rejected_draft_tokens": 0,
+      "rounds": 46,
+      "acceptance_length": 6.3478260869565215,
+      "tok_per_s": 160.09591191865013,
+      "time": 1.823906660079956
+    },
+    {
+      "new_tokens": 205,
+      "accepted_draft_tokens": 163,
+      "rejected_draft_tokens": 0,
+      "rounds": 42,
+      "acceptance_length": 4.880952380952381,
+      "tok_per_s": 126.4455203233166,
+      "time": 1.6212515830993652
+    },
+    {
+      "new_tokens": 189,
+      "accepted_draft_tokens": 157,
+      "rejected_draft_tokens": 0,
+      "rounds": 32,
+      "acceptance_length": 5.90625,
+      "tok_per_s": 151.3744758525041,
+      "time": 1.2485592365264893
+    },
+    {
+      "new_tokens": 223,
+      "accepted_draft_tokens": 190,
+      "rejected_draft_tokens": 0,
+      "rounds": 33,
+      "acceptance_length": 6.757575757575758,
+      "tok_per_s": 173.2538817413674,
+      "time": 1.2871284484863281
+    },
+    {
+      "new_tokens": 195,
+      "accepted_draft_tokens": 160,
+      "rejected_draft_tokens": 0,
+      "rounds": 35,
+      "acceptance_length": 5.571428571428571,
+      "tok_per_s": 140.03063970135537,
+      "time": 1.392552375793457
+    },
+    {
+      "new_tokens": 284,
+      "accepted_draft_tokens": 237,
+      "rejected_draft_tokens": 0,
+      "rounds": 47,
+      "acceptance_length": 6.042553191489362,
+      "tok_per_s": 156.72589797034848,
+      "time": 1.8120808601379395
+    },
+    {
+      "new_tokens": 454,
+      "accepted_draft_tokens": 368,
+      "rejected_draft_tokens": 0,
+      "rounds": 86,
+      "acceptance_length": 5.27906976744186,
+      "tok_per_s": 139.41686925844053,
+      "time": 3.256420850753784
+    },
+    {
+      "new_tokens": 271,
+      "accepted_draft_tokens": 218,
+      "rejected_draft_tokens": 0,
+      "rounds": 53,
+      "acceptance_length": 5.113207547169812,
+      "tok_per_s": 133.01443718995606,
+      "time": 2.0373728275299072
+    },
+    {
+      "new_tokens": 414,
+      "accepted_draft_tokens": 344,
+      "rejected_draft_tokens": 0,
+      "rounds": 70,
+      "acceptance_length": 5.914285714285715,
+      "tok_per_s": 152.6234897217624,
+      "time": 2.712557554244995
+    }
+  ]
+}

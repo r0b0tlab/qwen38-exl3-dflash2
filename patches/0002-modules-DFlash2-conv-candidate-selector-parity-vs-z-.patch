@@ -1,0 +1,466 @@
+From 677882568560527a3b83aaeaa7d8967876816be5 Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 11:20:54 -0500
+Subject: [PATCH 2/8] modules: DFlash2 conv + candidate selector, parity vs
+ z-lab reference
+
+---
+ exllamav3/modules/arch_specific/dflash2.py | 313 +++++++++++++++++++++
+ tests/ntest_dflash2_modules.py             | 128 +++++++++
+ 2 files changed, 441 insertions(+)
+ create mode 100644 exllamav3/modules/arch_specific/dflash2.py
+ create mode 100644 tests/ntest_dflash2_modules.py
+
+diff --git a/exllamav3/modules/arch_specific/dflash2.py b/exllamav3/modules/arch_specific/dflash2.py
+new file mode 100644
+index 0000000..0c08822
+--- /dev/null
++++ b/exllamav3/modules/arch_specific/dflash2.py
+@@ -0,0 +1,313 @@
++from __future__ import annotations
++from typing_extensions import override
++import torch
++import torch.nn.functional as F
++
++from .. import Module, Linear
++from ...model.config import Config
++
++# ---------------------------------------------------------------------------
++# Pure math, ported from the reference implementation (z-lab/dflash,
++# dflash/model.py, MIT license). The walk/conv functions take plain tensors so
++# they can be unit-tested against the reference without loading a model.
++# ---------------------------------------------------------------------------
++
++def grouped_dynamic_convolve(
++    hidden: torch.Tensor,
++    dynamic: torch.Tensor,
++    base: torch.Tensor,
++    group_size: int,
++) -> torch.Tensor:
++    """
++    out[i,c] = sum_t (base[t,c] + delta[i,t,g(c)]) * x[i-t,c]
++
++    taps are zero across the block boundary (the shift is within the provided
++    block tensor). hidden: (batch, length, hidden); dynamic: (batch, length, K,
++    groups); base: (K, hidden).
++    """
++    batch, length, hidden_size = hidden.shape
++    groups = hidden_size // group_size
++    blocks = hidden.view(batch, length, groups, group_size)
++    dynamic = dynamic.view(batch, length, base.shape[0], groups, 1)
++    output = torch.zeros_like(blocks)
++    for offset in range(base.shape[0]):
++        values = blocks if offset == 0 else F.pad(blocks[:, :-offset], (0, 0, 0, 0, offset, 0))
++        kernel = base[offset].view(1, 1, groups, group_size).to(hidden.dtype)
++        output = output + kernel * values
++        output = torch.addcmul(output, dynamic[:, :, offset], values)
++    return output.view_as(hidden)
++
++
++def conv_prepare(
++    hidden: torch.Tensor,
++    base_kernel_0: torch.Tensor,
++    kernel_projection_weight: torch.Tensor,
++    kernel_size: int,
++    group_size: int,
++) -> tuple[torch.Tensor, torch.Tensor]:
++    groups = hidden.shape[-1] // group_size
++    dynamic = F.linear(hidden, kernel_projection_weight).view(
++        *hidden.shape[:-1], 2, kernel_size, groups
++    )
++    return (
++        grouped_dynamic_convolve(hidden, dynamic[..., 0, :, :], base_kernel_0, group_size),
++        dynamic[..., 1, :, :],
++    )
++
++
++def conv_finish(
++    hidden: torch.Tensor,
++    dynamic: torch.Tensor,
++    base_kernel_1: torch.Tensor,
++    group_size: int,
++) -> torch.Tensor:
++    return grouped_dynamic_convolve(hidden, dynamic, base_kernel_1, group_size)
++
++
++def selector_select(
++    hidden: torch.Tensor,
++    logits: torch.Tensor,
++    anchor_ids: torch.Tensor,
++    predecessor_codebook: torch.Tensor,
++    successor_codebook: torch.Tensor,
++    hidden_projection_weight: torch.Tensor | None,
++    temperature: float,
++    top_k: int,
++) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
++    """
++    Candidate path selector. Keeps the top-k candidates per block position, scores
++    adjacent transitions edge(p->c) = <A[p] * project(h), B[c]> + unary[c], and walks
++    one path from the verified anchor. Greedy: argmax walk (q is None). Sampled:
++    inverse-CDF walk returning q over the k candidates per position, for the
++    lossless rejection-sampling verify.
++
++    hidden: (batch, T, hidden) draft states for the mask positions; logits: (batch,
++    T, vocab) draft logits (via the target head); anchor_ids: (batch,) last verified
++    token ids; hidden_projection_weight: (rank, hidden) or None when hidden is
++    already projected to rank. Returns (path tokens (batch, T), candidates
++    (batch, T, k), q (batch, T, k) or None).
++    """
++    unary, candidates = torch.topk(logits, top_k, dim = -1, sorted = False)
++    if hidden_projection_weight is not None:
++        hidden = F.linear(hidden, hidden_projection_weight)
++    predecessor = anchor_ids
++    path, q_rows = [], []
++    for position in range(hidden.shape[1]):
++        scores = unary[:, position] + torch.einsum(
++            "br,bkr->bk",
++            F.embedding(predecessor, predecessor_codebook) * hidden[:, position],
++            F.embedding(candidates[:, position], successor_codebook),
++        )
++        if temperature > 0:
++            q = torch.softmax(scores.float() / temperature, dim = -1)
++            index = torch.multinomial(q, 1)[:, 0]
++            q_rows.append(q)
++        else:
++            index = torch.argmax(scores, dim = -1)
++        predecessor = candidates[:, position].gather(-1, index[:, None])[:, 0]
++        path.append(predecessor)
++    return (
++        torch.stack(path, dim = 1),
++        candidates,
++        torch.stack(q_rows, dim = 1) if q_rows else None,
++    )
++
++
++# ---------------------------------------------------------------------------
++# ExLlama3 module wrappers
++# ---------------------------------------------------------------------------
++
++class GroupedDynamicCausalConv(Module):
++    """
++    DFlash 2 grouped dynamic depthwise convolution, wrapped around a sublayer:
++    prepare() runs before the sublayer (input side), finish() after (output
++    side). base_kernel stays a raw fp16 tensor (uncalibrated); the
++    kernel_projection Linear quantizes normally.
++    """
++
++    def __init__(
++        self,
++        config: Config | None,
++        key: str,
++        hidden_size: int,
++        kernel_size: int,
++        group_size: int,
++    ):
++        super().__init__(config, key, None)
++        self.module_name = "GroupedDynamicCausalConv"
++        self.hidden_size = hidden_size
++        self.kernel_size = kernel_size
++        self.group_size = group_size
++        self.groups = hidden_size // group_size
++
++        self.kernel_projection = Linear(
++            config = config,
++            key = f"{key}.kernel_projection",
++            in_features = hidden_size,
++            out_features = 2 * kernel_size * self.groups,
++        )
++        self.register_submodule(self.kernel_projection)
++        self.base_kernel = None
++
++
++    @override
++    def optimizer_targets(self):
++        raise NotImplementedError()
++
++
++    @override
++    def load(self, device: torch.device, **kwargs):
++        super().load(device, **kwargs)
++        self.base_kernel = self.config.stc.get_tensor(
++            f"{self.key}.base_kernel",
++            device,
++            float2half = True,
++            no_defer = True,
++        )
++
++
++    @override
++    def unload(self):
++        super().unload()
++        self.base_kernel = None
++
++
++    @override
++    def weights_numel(self):
++        return super().weights_numel() + (self.base_kernel.numel() if self.base_kernel is not None else 0)
++
++
++    @override
++    def get_tensors(self):
++        t = super().get_tensors()
++        if self.base_kernel is not None:
++            t[f"{self.key}.base_kernel"] = self.base_kernel.data.contiguous()
++        return t
++
++
++    def prepare(self, hidden: torch.Tensor, params: dict) -> tuple[torch.Tensor, torch.Tensor]:
++        assert self.base_kernel is not None, "GroupedDynamicCausalConv not loaded"
++        proj = self.kernel_projection.forward(hidden, params, out_dtype = torch.float)
++        groups = hidden.shape[-1] // self.group_size
++        dynamic = proj.view(*hidden.shape[:-1], 2, self.kernel_size, groups)
++        return (
++            grouped_dynamic_convolve(hidden, dynamic[..., 0, :, :], self.base_kernel[0], self.group_size),
++            dynamic[..., 1, :, :],
++        )
++
++
++    def finish(self, hidden: torch.Tensor, dynamic: torch.Tensor, params: dict) -> torch.Tensor:
++        assert self.base_kernel is not None, "GroupedDynamicCausalConv not loaded"
++        return grouped_dynamic_convolve(hidden, dynamic, self.base_kernel[1], self.group_size)
++
++
++    @override
++    def forward(self, x: torch.Tensor, params: dict, out_dtype: torch.dtype = torch.half) -> torch.Tensor:
++        raise NotImplementedError(
++            "GroupedDynamicCausalConv wraps a sublayer via prepare()/finish(), not forward()"
++        )
++
++
++class CandidateSelector(Module):
++    """
++    DFlash 2 candidate path selector. Codebooks stay raw fp16 tensors
++    (uncalibrated); hidden_projection quantizes normally.
++    """
++
++    def __init__(
++        self,
++        config: Config | None,
++        key: str,
++        vocab_size: int,
++        hidden_size: int,
++        rank: int,
++        top_k: int,
++    ):
++        super().__init__(config, key, None)
++        self.module_name = "CandidateSelector"
++        self.vocab_size = vocab_size
++        self.rank = rank
++        self.top_k = top_k
++
++        self.hidden_projection = Linear(
++            config = config,
++            key = f"{key}.hidden_projection",
++            in_features = hidden_size,
++            out_features = rank,
++        )
++        self.register_submodule(self.hidden_projection)
++        self.predecessor_codebook = None
++        self.successor_codebook = None
++
++
++    @override
++    def optimizer_targets(self):
++        raise NotImplementedError()
++
++
++    @override
++    def load(self, device: torch.device, **kwargs):
++        super().load(device, **kwargs)
++        self.predecessor_codebook = self.config.stc.get_tensor(
++            f"{self.key}.predecessor_codebook.weight",
++            device,
++            float2half = True,
++            no_defer = True,
++        )
++        self.successor_codebook = self.config.stc.get_tensor(
++            f"{self.key}.successor_codebook.weight",
++            device,
++            float2half = True,
++            no_defer = True,
++        )
++
++
++    @override
++    def unload(self):
++        super().unload()
++        self.predecessor_codebook = None
++        self.successor_codebook = None
++
++
++    @override
++    def weights_numel(self):
++        n = super().weights_numel()
++        if self.predecessor_codebook is not None:
++            n += self.predecessor_codebook.numel() + self.successor_codebook.numel()
++        return n
++
++
++    @override
++    def get_tensors(self):
++        t = super().get_tensors()
++        if self.predecessor_codebook is not None:
++            t[f"{self.key}.predecessor_codebook.weight"] = self.predecessor_codebook.data.contiguous()
++            t[f"{self.key}.successor_codebook.weight"] = self.successor_codebook.data.contiguous()
++        return t
++
++
++    def select(
++        self,
++        hidden: torch.Tensor,
++        logits: torch.Tensor,
++        anchor_ids: torch.Tensor,
++        temperature: float,
++    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
++        proj = self.hidden_projection.forward(hidden, {}, out_dtype = torch.float)
++        assert self.predecessor_codebook is not None and self.successor_codebook is not None, \
++            "CandidateSelector not loaded"
++        return selector_select(
++            proj,
++            logits,
++            anchor_ids,
++            self.predecessor_codebook,
++            self.successor_codebook,
++            None,
++            temperature,
++            self.top_k,
++        )
++
++
++    @override
++    def forward(self, x: torch.Tensor, params: dict, out_dtype: torch.dtype = torch.half) -> torch.Tensor:
++        raise NotImplementedError("CandidateSelector runs via select(), not forward()")
+diff --git a/tests/ntest_dflash2_modules.py b/tests/ntest_dflash2_modules.py
+new file mode 100644
+index 0000000..563dcf7
+--- /dev/null
++++ b/tests/ntest_dflash2_modules.py
+@@ -0,0 +1,128 @@
++"""
++Parity tests for the DFlash2 modules against the reference implementation
++(z-lab/dflash, dflash/model.py, MIT). The pure math functions are compared on
++identical seeded tensors, so tolerances are tight.
++"""
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++pytestmark = pytest.mark.skipif(
++    pytest.importorskip("dflash.model", reason="reference dflash package not installed") is None,
++    reason="reference dflash package not installed",
++)
++
++from dflash.model import (  # noqa: E402
++    CandidateSelector as RefSelector,
++    GroupedDynamicCausalConv as RefConv,
++)
++
++from exllamav3.modules.arch_specific.dflash2 import (  # noqa: E402
++    conv_finish,
++    conv_prepare,
++    selector_select,
++)
++
++
++def _mk_conv(hidden=256, k=2, g=8, seed=0):
++    torch.manual_seed(seed)
++    base = torch.randn(2, k, hidden) * 0.05
++    proj_w = torch.randn(2 * k * (hidden // g), hidden) * 0.05
++    ref = RefConv(hidden, k, g)
++    with torch.no_grad():
++        ref.base_kernel.copy_(base)
++        ref.kernel_projection.weight.copy_(proj_w)
++    return base, proj_w, ref, hidden, k, g
++
++
++def test_conv_prepare_parity():
++    base, proj_w, ref, hidden, k, g = _mk_conv()
++    x = torch.randn(1, 7, hidden)
++    out_ref, dyn_ref = ref.prepare(x)
++    out_ours, dyn_ours = conv_prepare(x, base[0], proj_w, k, g)
++    assert torch.allclose(out_ours, out_ref, atol=1e-5, rtol=1e-5)
++    assert torch.allclose(dyn_ours, dyn_ref, atol=1e-5, rtol=1e-5)
++
++
++def test_conv_finish_parity():
++    base, proj_w, ref, hidden, k, g = _mk_conv(seed=1)
++    x = torch.randn(1, 7, hidden)
++    _, dyn = ref.prepare(x)
++    y = torch.randn(1, 7, hidden)
++    out_ref = ref.finish(y, dyn)
++    out_ours = conv_finish(y, dyn, base[1], g)
++    assert torch.allclose(out_ours, out_ref, atol=1e-5, rtol=1e-5)
++
++
++def _mk_selector(vocab=500, rank=32, k=8, hidden=128, seed=2):
++    torch.manual_seed(seed)
++    cfg = SimpleNamespace(
++        vocab_size=vocab,
++        hidden_size=hidden,
++        dflash_config={"selector_rank": rank, "selector_top_k": k},
++    )
++    ref = RefSelector(cfg)
++    A = torch.randn(vocab, rank) * 0.05
++    B = torch.randn(vocab, rank) * 0.05
++    P = torch.randn(rank, hidden) * 0.05
++    with torch.no_grad():
++        ref.predecessor_codebook.weight.copy_(A)
++        ref.successor_codebook.weight.copy_(B)
++        ref.hidden_projection.weight.copy_(P)
++    return A, B, P, ref, vocab, rank, k, hidden
++
++
++def _fixed_inputs(vocab, hidden, T=5, seed=3):
++    torch.manual_seed(seed)
++    h = torch.randn(1, T, hidden)
++    logits = torch.randn(1, T, vocab)
++    anchor = torch.tensor([7])
++    return h, logits, anchor
++
++
++def test_selector_greedy_parity():
++    A, B, P, ref, vocab, rank, k, hidden = _mk_selector()
++    h, logits, anchor = _fixed_inputs(vocab, hidden)
++    path_ref, cand_ref, q_ref = ref.select(h, logits, anchor, 0.0)
++    path_ours, cand_ours, q_ours = selector_select(h, logits, anchor, A, B, P, 0.0, k)
++    assert q_ref is None and q_ours is None
++    # topk(sorted=False) order can differ between implementations only if scores tie;
++    # the walked path must agree
++    assert torch.equal(path_ref, path_ours)
++    assert torch.equal(cand_ref, cand_ours)
++
++
++def test_selector_sampled_q_parity():
++    A, B, P, ref, vocab, rank, k, hidden = _mk_selector()
++    h, logits, anchor = _fixed_inputs(vocab, hidden, seed=4)
++    torch.manual_seed(123)
++    path_ref, cand_ref, q_ref = ref.select(h, logits, anchor, 0.8)
++    torch.manual_seed(123)
++    path_ours, cand_ours, q_ours = selector_select(h, logits, anchor, A, B, P, 0.8, k)
++    assert q_ref is not None and q_ours is not None
++    assert torch.allclose(q_ours, q_ref, atol=1e-6, rtol=1e-6)
++    assert torch.equal(path_ref, path_ours)
++    assert torch.equal(cand_ref, cand_ours)
++
++
++def test_selector_sampled_q_is_distribution_over_candidates():
++    A, B, P, _, vocab, rank, k, hidden = _mk_selector(seed=5)
++    h, logits, anchor = _fixed_inputs(vocab, hidden, seed=6)
++    _, candidates, q = selector_select(h, logits, anchor, A, B, P, 1.0, k)
++    assert q is not None
++    assert torch.allclose(q.sum(-1), torch.ones(1, h.shape[1]), atol=1e-6)
++    # scatter q into a vocab-wide tensor at the candidate indices and read it back:
++    # if q's support is exactly the candidates, the round trip is lossless
++    full = torch.zeros(1, h.shape[1], vocab)
++    full.scatter_(-1, candidates, q)
++    assert torch.allclose(torch.gather(full, -1, candidates), q, atol=1e-6)
++    assert full.sum(-1).allclose(torch.ones(1, h.shape[1]), atol=1e-6)
++
++
++def test_selector_greedy_returns_no_q():
++    A, B, P, _, vocab, rank, k, hidden = _mk_selector(seed=7)
++    h, logits, anchor = _fixed_inputs(vocab, hidden, seed=8)
++    path, _, q = selector_select(h, logits, anchor, A, B, P, 0.0, k)
++    assert q is None
++    assert path.shape == (1, h.shape[1])

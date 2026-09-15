@@ -1,0 +1,21 @@
+{
+  "summary": {
+    "target": "models/qwen38-27b-exl3",
+    "draft": "models/dflash2-exl3",
+    "n": 1,
+    "mean_acceptance_length": 4.571428571428571,
+    "mean_tok_per_s": 55.83313837301594,
+    "hit_token_cap": 1
+  },
+  "per_request": [
+    {
+      "new_tokens": 64,
+      "accepted_draft_tokens": 50,
+      "rejected_draft_tokens": 0,
+      "rounds": 14,
+      "acceptance_length": 4.571428571428571,
+      "tok_per_s": 55.83313837301594,
+      "time": 1.1462726593017578
+    }
+  ]
+}

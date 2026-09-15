@@ -1,0 +1,21 @@
+services:
+  qwen38:
+    build:
+      context: ..
+      dockerfile: container/Dockerfile
+    image: qwen38-exl3-dflash2:1.5.0
+    container_name: qwen38-exl3-dflash2
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      MODEL_DIR: /models/qwen38-27b-exl3
+      DRAFT_DIR: /models/dflash2-exl3
+      MODE: chatml
+      CTX: "262144"
+      CQ: "3"
+      # PROMPT: "Explain photosynthesis in one sentence."   # one-shot, exits after the reply
+      # EXTRA_ARGS: "-basic -tps"
+    volumes:
+      - ${MODELS_ROOT:-../models}:/models:ro
+    stdin_open: true
+    tty: true

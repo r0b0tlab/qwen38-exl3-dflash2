@@ -1,0 +1,23 @@
+From aa6adf8b68b2fb49cfb3611f9cad578e86680a33 Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 13:51:11 -0500
+Subject: [PATCH 7/8] modules: CandidateSelector is a no-op in the module walk
+ (selection runs via select())
+
+---
+ exllamav3/modules/arch_specific/dflash2.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/exllamav3/modules/arch_specific/dflash2.py b/exllamav3/modules/arch_specific/dflash2.py
+index cd3d70d..98fea06 100644
+--- a/exllamav3/modules/arch_specific/dflash2.py
++++ b/exllamav3/modules/arch_specific/dflash2.py
+@@ -327,4 +327,7 @@ class CandidateSelector(Module):
+ 
+     @override
+     def forward(self, x: torch.Tensor, params: dict, out_dtype: torch.dtype = torch.half) -> torch.Tensor:
+-        raise NotImplementedError("CandidateSelector runs via select(), not forward()")
++        # The selector sits in the model's module list so the loader reaches its weights, and
++        # the module walk visits every entry in order — here it must leave the state untouched.
++        # Selection happens via select(), called from propose() with the draft block states.
++        return x

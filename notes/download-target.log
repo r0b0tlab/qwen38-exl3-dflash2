@@ -1,0 +1,4 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Still waiting to acquire lock on models/qwen38-27b-hf/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Still waiting to acquire lock on models/qwen38-27b-hf/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+path=/home/am/exl3-qwen38-dflash2/models/qwen38-27b-hf

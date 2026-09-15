@@ -1,0 +1,6 @@
+models/
+env/
+work/
+exllamav3/
+__pycache__/
+*.pyc

@@ -1,0 +1,75 @@
+From 5b0617db47a3d11b8ede03f2633bec4f2d34a804 Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 11:57:58 -0500
+Subject: [PATCH 4/8] dflash2: checkpoint codebook key variants, load + propose
+ tests green
+
+---
+ exllamav3/modules/arch_specific/dflash2.py | 27 +++++++++++++++-------
+ tests/ntest_dflash2_load.py                |  4 ++--
+ 2 files changed, 21 insertions(+), 10 deletions(-)
+
+diff --git a/exllamav3/modules/arch_specific/dflash2.py b/exllamav3/modules/arch_specific/dflash2.py
+index 0c08822..a6527c9 100644
+--- a/exllamav3/modules/arch_specific/dflash2.py
++++ b/exllamav3/modules/arch_specific/dflash2.py
+@@ -248,18 +248,29 @@ class CandidateSelector(Module):
+     @override
+     def load(self, device: torch.device, **kwargs):
+         super().load(device, **kwargs)
+-        self.predecessor_codebook = self.config.stc.get_tensor(
+-            f"{self.key}.predecessor_codebook.weight",
+-            device,
+-            float2half = True,
+-            no_defer = True,
+-        )
+-        self.successor_codebook = self.config.stc.get_tensor(
+-            f"{self.key}.successor_codebook.weight",
++        # The DFlash2 checkpoints store the codebooks under the bare embedding name
++        # (candidate_selector.predecessor_codebook); some trainers append .weight like a
++        # standard nn.Embedding. Accept both.
++        self.predecessor_codebook = self._load_codebook("predecessor_codebook", device)
++        self.successor_codebook = self._load_codebook("successor_codebook", device)
++
++
++    def _load_codebook(self, name: str, device: torch.device) -> torch.Tensor:
++        t = self.config.stc.get_tensor(
++            f"{self.key}.{name}",
+             device,
+             float2half = True,
++            optional = True,
+             no_defer = True,
+         )
++        if t is None:
++            t = self.config.stc.get_tensor(
++                f"{self.key}.{name}.weight",
++                device,
++                float2half = True,
++                no_defer = True,
++            )
++        return t
+ 
+ 
+     @override
+diff --git a/tests/ntest_dflash2_load.py b/tests/ntest_dflash2_load.py
+index 96ddfd5..14a9eff 100644
+--- a/tests/ntest_dflash2_load.py
++++ b/tests/ntest_dflash2_load.py
+@@ -61,7 +61,7 @@ def test_propose_shapes_with_stub_target_head():
+ 
+     # zero the codebooks and projection so edge scores vanish: the greedy walk must
+     # then pick the head-logit argmax candidate at every position
+-    with torch.no_grad():
++    with torch.inference_mode():
+         sel = model.candidate_selector
+         sel.predecessor_codebook.zero_()
+         sel.successor_codebook.zero_()
+@@ -90,7 +90,7 @@ def test_propose_shapes_with_stub_target_head():
+             return x
+ 
+         def forward(self, x, params):
+-            return torch.nn.functional.linear(x, self.w.float())
++            return torch.nn.functional.linear(x.float(), self.w.float())
+ 
+     model.attached_model = lambda: _StubTarget(248320, 5120)
+ 

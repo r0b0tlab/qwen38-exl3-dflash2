@@ -1,0 +1,3 @@
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+unsloth-zoo 2026.4.9 requires datasets!=4.0.*,!=4.1.0,<4.4.0,>=3.4.1, but you have datasets 5.0.1 which is incompatible.
+exit=0

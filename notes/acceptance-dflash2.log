@@ -1,0 +1,12 @@
+/home/am/.local/lib/python3.14/site-packages/torch/cuda/__init__.py:65: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+{
+  "target": "models/qwen38-27b-exl3",
+  "draft": "models/dflash2-exl3",
+  "n": 40,
+  "mean_acceptance_length": 5.473743034731543,
+  "mean_tok_per_s": 152.35917454719217,
+  "hit_token_cap": 6
+}
+exit=0

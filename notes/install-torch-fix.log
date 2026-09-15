@@ -1,0 +1,106 @@
+Using Python 3.13.13 environment at: env
+Resolved 28 packages in 2.50s
+Downloading nvidia-curand-cu12 (60.7MiB)
+Downloading cuda-bindings (11.4MiB)
+Downloading torch (874.4MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cufile-cu12 (1.1MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+ Downloaded nvidia-cufile-cu12
+ Downloaded cuda-bindings
+ Downloaded nvidia-curand-cu12
+  × Failed to download `nvidia-cuda-nvrtc-cu12==12.8.93`
+  ├─▶ Request failed after 4 retries in 124.1s
+  ├─▶ Failed to fetch:
+  │   `https://pypi.nvidia.com/nvidia-cuda-nvrtc-cu12/nvidia_cuda_nvrtc_cu12-12.8.93-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl`
+  ├─▶ error sending request for url
+  │   (https://pypi.nvidia.com/nvidia-cuda-nvrtc-cu12/nvidia_cuda_nvrtc_cu12-12.8.93-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl)
+  ╰─▶ operation timed out
+  help: `nvidia-cuda-nvrtc-cu12` (v12.8.93) was included because `torch`
+        (v2.10.0+cu128) depends on `nvidia-cuda-nvrtc-cu12`
+exit=1
+Using Python 3.13.13 environment at: env
+Resolved 28 packages in 2.81s
+Downloading torch (874.4MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+  × Failed to download `nvidia-cusparse-cu12==12.5.8.93`
+  ├─▶ Request failed after 4 retries in 125.7s
+  ├─▶ Failed to fetch:
+  │   `https://pypi.nvidia.com/nvidia-cusparse-cu12/nvidia_cusparse_cu12-12.5.8.93-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl`
+  ├─▶ error sending request for url
+  │   (https://pypi.nvidia.com/nvidia-cusparse-cu12/nvidia_cusparse_cu12-12.5.8.93-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl)
+  ╰─▶ operation timed out
+  help: `nvidia-cusparse-cu12` (v12.5.8.93) was included because `torch`
+        (v2.10.0+cu128) depends on `nvidia-cusparse-cu12`
+retry-1-failed
+Using Python 3.13.13 environment at: env
+Resolved 28 packages in 4.25s
+Downloading torch (874.4MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+  × Failed to download `nvidia-cusolver-cu12==11.7.3.90`
+  ├─▶ Request failed after 4 retries in 125.3s
+  ├─▶ Failed to fetch:
+  │   `https://pypi.nvidia.com/nvidia-cusolver-cu12/nvidia_cusolver_cu12-11.7.3.90-py3-none-manylinux_2_27_x86_64.whl`
+  ├─▶ error sending request for url
+  │   (https://pypi.nvidia.com/nvidia-cusolver-cu12/nvidia_cusolver_cu12-11.7.3.90-py3-none-manylinux_2_27_x86_64.whl)
+  ╰─▶ operation timed out
+  help: `nvidia-cusolver-cu12` (v11.7.3.90) was included because `torch`
+        (v2.10.0+cu128) depends on `nvidia-cusolver-cu12`
+retry-2-failed
+Using Python 3.13.13 environment at: env
+Resolved 28 packages in 2.71s
+Downloading torch (874.4MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-nccl-cu12 (307.4MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cudnn-cu12 (674.0MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+  × Failed to download `nvidia-cuda-cupti-cu12==12.8.90`
+  ├─▶ Request failed after 4 retries in 129.3s
+  ├─▶ Failed to fetch:
+  │   `https://pypi.nvidia.com/nvidia-cuda-cupti-cu12/nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl`
+  ├─▶ error sending request for url
+  │   (https://pypi.nvidia.com/nvidia-cuda-cupti-cu12/nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl)
+  ╰─▶ operation timed out
+  help: `nvidia-cuda-cupti-cu12` (v12.8.90) was included because `torch`
+        (v2.10.0+cu128) depends on `nvidia-cuda-cupti-cu12`
+retry-3-failed

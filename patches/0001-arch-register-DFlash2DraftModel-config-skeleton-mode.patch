@@ -1,0 +1,143 @@
+From ab97ba7ebfd48a5ddea0d9b5d5dae1c7c01ef788 Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 11:13:34 -0500
+Subject: [PATCH 1/8] arch: register DFlash2DraftModel config + skeleton model
+
+---
+ exllamav3/architecture/architectures.py |  2 +
+ exllamav3/architecture/dflash2.py       | 61 +++++++++++++++++++++++++
+ tests/ntest_dflash2_config.py           | 37 +++++++++++++++
+ 3 files changed, 100 insertions(+)
+ create mode 100644 exllamav3/architecture/dflash2.py
+ create mode 100644 tests/ntest_dflash2_config.py
+
+diff --git a/exllamav3/architecture/architectures.py b/exllamav3/architecture/architectures.py
+index 3b8520d..130cfeb 100644
+--- a/exllamav3/architecture/architectures.py
++++ b/exllamav3/architecture/architectures.py
+@@ -8,6 +8,7 @@ from .deepseek_v3 import DeepseekV3Model
+ from .deepseek_v4 import DeepseekV4Model
+ from .dflash import DFlashModel
+ from .dflash_laguna import DFlashLagunaModel
++from .dflash2 import DFlash2Model
+ from .dots1 import Dots1Model
+ from .ernie4_5 import Ernie4_5Model
+ from .ernie4_5_moe import Ernie4_5MoEModel
+@@ -75,6 +76,7 @@ ARCHITECTURES = {
+         DeepseekV4Model,
+         DFlashModel,
+         DFlashLagunaModel,
++        DFlash2Model,
+         Dots1Model,
+         Ernie4_5Model,
+         Ernie4_5MoEModel,
+diff --git a/exllamav3/architecture/dflash2.py b/exllamav3/architecture/dflash2.py
+new file mode 100644
+index 0000000..40c1b41
+--- /dev/null
++++ b/exllamav3/architecture/dflash2.py
+@@ -0,0 +1,61 @@
++from __future__ import annotations
++from .dflash import DFlashConfig, DFlashModel
++from ..model.config import no_default
++
++
++class DFlash2Config(DFlashConfig):
++    """
++    DFlash 2 draft model (block diffusion drafter with grouped dynamic convolution and a
++    candidate path selector). Checkpoint arch string: DFlash2DraftModel.
++
++    Adds over DFlash v1 (all under dflash_config-> or top level, mirroring the reference
++    z-lab/dflash implementation):
++      - conv_kernel_size, conv_group_size: per-sublayer grouped dynamic depthwise convolution
++      - selector_rank, selector_top_k: candidate path selector (bilinear adjacent-pair scoring)
++    """
++
++    arch_string = "DFlash2DraftModel"
++
++    def __init__(
++        self,
++        directory: str,
++        model_classes: dict | None = None,
++        **kwargs,
++    ):
++        super().__init__(
++            directory,
++            model_classes or {"text": DFlash2Model},
++            **kwargs
++        )
++
++        # DFlash 2 additions
++        self.conv_kernel_size = self.read_cfg(int, ["dflash_config->conv_kernel_size", "conv_kernel_size"], no_default)
++        self.conv_group_size = self.read_cfg(int, ["dflash_config->conv_group_size", "conv_group_size"], no_default)
++        self.selector_rank = self.read_cfg(int, ["dflash_config->selector_rank", "selector_rank"], no_default)
++        self.selector_top_k = self.read_cfg(int, ["dflash_config->selector_top_k", "selector_top_k"], no_default)
++
++
++class DFlash2Model(DFlashModel):
++    """
++    DFlash 2 draft. v1 backbone (fc + SWA layers + shared target head) plus:
++      - GroupedDynamicCausalConv wrapped around each attention and MLP sublayer
++      - CandidateSelector producing the drafted token path (greedy walk or sampled walk
++        with q over the per-position candidate lists, for the lossless verify)
++    Conv and selector parameters stay in fp16 (small, uncalibrated); the backbone Linears
++    quantize normally.
++    """
++
++    config_class = DFlash2Config
++
++    def __init__(
++        self,
++        config: DFlash2Config,
++        **kwargs
++    ):
++        super().__init__(config, **kwargs)
++        self.caps.update({
++            "dflash2_draft": True,
++        })
++
++    # Conv/selector wiring, propose(), and the fp16 exclusion set land with the module
++    # implementation (Tasks 2.3-2.5).
+diff --git a/tests/ntest_dflash2_config.py b/tests/ntest_dflash2_config.py
+new file mode 100644
+index 0000000..75dffdd
+--- /dev/null
++++ b/tests/ntest_dflash2_config.py
+@@ -0,0 +1,37 @@
++import os
++
++import pytest
++
++DFLASH2_HF_DIR = os.environ.get(
++    "DFLASH2_HF_DIR",
++    os.path.expanduser("~/exl3-qwen38-dflash2/models/dflash2-hf"),
++)
++
++requires_dflash2_hf = pytest.mark.skipif(
++    not os.path.exists(os.path.join(DFLASH2_HF_DIR, "config.json")),
++    reason = "DFlash2 HF checkpoint not downloaded (set DFLASH2_HF_DIR)",
++)
++
++
++def test_dflash2_arch_registered():
++    from exllamav3.architecture.architectures import get_architectures
++    archs = get_architectures()
++    assert "DFlash2DraftModel" in archs
++    assert archs["DFlash2DraftModel"]["model_class"].__name__ == "DFlash2Model"
++
++
++@requires_dflash2_hf
++def test_dflash2_config_reads_dflash2_fields():
++    from exllamav3.architecture.dflash2 import DFlash2Config
++    cfg = DFlash2Config(DFLASH2_HF_DIR)
++    assert cfg.arch_string == "DFlash2DraftModel"
++    assert cfg.conv_kernel_size == 2
++    assert cfg.conv_group_size == 16
++    assert cfg.selector_rank == 256
++    assert cfg.selector_top_k == 16
++    assert cfg.block_size == 8
++    # reference extract_context_feature uses hidden_states[layer_id + 1]; v1 tap_shift default is 1
++    assert cfg.target_layer_ids == [6, 20, 34, 48, 62]
++    assert cfg.mask_token_id == 248070
++    # v1-derived caps must remain intact
++    assert cfg.arch_string != "DFlashDraftModel"

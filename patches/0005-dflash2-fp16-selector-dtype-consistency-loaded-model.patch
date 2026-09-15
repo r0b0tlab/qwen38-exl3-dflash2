@@ -1,0 +1,33 @@
+From cefec6c200ea6c86e418a5cd02110a8eca2b1f54 Mon Sep 17 00:00:00 2001
+From: mr-r0b0t <adam.manning@gmail.com>
+Date: Tue, 15 Sep 2026 11:59:09 -0500
+Subject: [PATCH 5/8] dflash2: fp16 selector dtype consistency (loaded-model
+ path)
+
+---
+ exllamav3/modules/arch_specific/dflash2.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/exllamav3/modules/arch_specific/dflash2.py b/exllamav3/modules/arch_specific/dflash2.py
+index a6527c9..d675209 100644
+--- a/exllamav3/modules/arch_specific/dflash2.py
++++ b/exllamav3/modules/arch_specific/dflash2.py
+@@ -90,6 +90,9 @@ def selector_select(
+     unary, candidates = torch.topk(logits, top_k, dim = -1, sorted = False)
+     if hidden_projection_weight is not None:
+         hidden = F.linear(hidden, hidden_projection_weight)
++    # the codebooks load as fp16; keep the bilinear term in one dtype (no-op for the
++    # fp32 parity tests, cast for the loaded model)
++    hidden = hidden.to(predecessor_codebook.dtype)
+     predecessor = anchor_ids
+     path, q_rows = [], []
+     for position in range(hidden.shape[1]):
+@@ -304,7 +307,7 @@ class CandidateSelector(Module):
+         anchor_ids: torch.Tensor,
+         temperature: float,
+     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+-        proj = self.hidden_projection.forward(hidden, {}, out_dtype = torch.float)
++        proj = self.hidden_projection.forward(hidden, {}, out_dtype = torch.half)
+         assert self.predecessor_codebook is not None and self.successor_codebook is not None, \
+             "CandidateSelector not loaded"
+         return selector_select(
