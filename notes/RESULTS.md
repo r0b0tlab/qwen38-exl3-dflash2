@@ -66,7 +66,16 @@ real-checkpoint load) green on the final tree; existing generator tests pass.
 - `container/` — entrypoint fixed (`chat.py` flags, `-prompt` one-shot), uv venv Python
   relocated out of `/root`, build-time smoke as the runtime user
 
+## Publication
+
+- Results repo: https://github.com/r0b0tlab/qwen38-exl3-dflash2
+- Engine fork: https://github.com/r0b0tlab/exllamav3 (branch `dflash2-pathway`, tip `4960047`)
+
 ## Pending
 
-- Container GPU validation run (one-shot `-prompt`).
-- GitHub publication package.
+- Container GPU validation run (one-shot `-prompt`) — blocked on host tooling: this box has
+  no nvidia-container-toolkit and no passwordless sudo, so `--gpus all` cannot attach the
+  3090 yet. The image itself is validated CPU-side (runtime-user `import torch, exllamav3`
+  smoke runs in the build). Unblock: `sudo apt-get install -y nvidia-container-toolkit` then
+  either `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml` (no daemon restart) or
+  `sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker`.
