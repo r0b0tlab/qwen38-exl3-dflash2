@@ -69,7 +69,9 @@ real-checkpoint load) green on the final tree; existing generator tests pass.
 ## Publication
 
 - Results repo: https://github.com/r0b0tlab/qwen38-exl3-dflash2
-- Engine fork: https://github.com/r0b0tlab/exllamav3 (branch `dflash2-pathway`, tip `5cdf6bc`)
+- Engine fork: https://github.com/r0b0tlab/exllamav3 (branch `dflash2-pathway`, curated tip
+  `30846b8`; pre-curation history preserved on `dflash2-pathway-backup`)
+- Upstream PR: https://github.com/turboderp-org/exllamav3/pull/379
 
 ## Pending
 

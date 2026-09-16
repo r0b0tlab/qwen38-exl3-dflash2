@@ -1,6 +1,7 @@
 # Upstream PR draft: DFlash2 draft-model support (final body)
 
 > Target: `turboderp-org/exllamav3:master` from `r0b0tlab/exllamav3:dflash2-pathway`.
+> **Submitted: [PR #379](https://github.com/turboderp-org/exllamav3/pull/379) (2026-09-16).**
 > Structure follows the repo's de facto PR style (see merged PR #349): Why / Commits /
 > Accuracy / Speed / Testing / Notes for review. Plan + prep steps: `notes/PR-DFLASH2-PLAN.md`.
 

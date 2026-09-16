@@ -7,7 +7,7 @@ recurrent history, using the real models and the exact failure configuration
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "exllamav3"))
 
 from exllamav3 import Config, Model, Cache, Tokenizer, Generator  # noqa: E402
 
