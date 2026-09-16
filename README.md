@@ -1,9 +1,12 @@
 # Qwen3.8-27B EXL3 + DFlash2 on the RTX 3090
 
-Quantized [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) (EXL3, 4.00 bpw) tuned for a
-24 GB RTX 3090, accelerated with [`incoai/Qwen3.8-27B-DFlash2`](https://huggingface.co/incoai/Qwen3.8-27B-DFlash2)
-block-diffusion speculative decoding through a **DFlash2 pathway added to ExLlamaV3** (this repo's
-`exllamav3/` fork), at the model's full advertised 262,144-token context.
+The published EXL3 quants — [`r0b0tlab/Qwen3.8-27B-EXL3-4.00bpw`](https://huggingface.co/r0b0tlab/Qwen3.8-27B-EXL3-4.00bpw)
+(target) and [`r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw`](https://huggingface.co/r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw)
+(draft) — tuned for a 24 GB RTX 3090, running at the model's full advertised 262,144-token context
+with block-diffusion speculative decoding through a **DFlash2 pathway added to ExLlamaV3** (this
+repo's `exllamav3/` fork). Quants of [`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B)
+and [`incoai/Qwen3.8-27B-DFlash2`](https://huggingface.co/incoai/Qwen3.8-27B-DFlash2), licensed per
+the parents.
 
 ## Results
 
@@ -22,6 +25,9 @@ methodology and raw JSON: `notes/ACCEPTANCE.md`, `notes/RESULTS.md`.
 - `container/` — optimized runtime image (multi-stage, no toolchain in the final image).
 - `scripts/` — VRAM budget gate + acceptance/long-context/sampled benchmarks.
 - `notes/` — design doc, spike findings, benchmark logs.
+- **Weights** (HuggingFace): [r0b0tlab/Qwen3.8-27B-EXL3-4.00bpw](https://huggingface.co/r0b0tlab/Qwen3.8-27B-EXL3-4.00bpw)
+  and [r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw](https://huggingface.co/r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw)
+  — what the container pulls on first run.
 - `patches/` — the engine delta as format-patch files; the same commits are on the fork branch
   `dflash2-pathway` at https://github.com/r0b0tlab/exllamav3.
 
