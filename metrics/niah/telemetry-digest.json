@@ -1,0 +1,31 @@
+{
+  "samples": 368,
+  "span_s": 742,
+  "load_only": {
+    "power_w": {
+      "mean": 335.49,
+      "max": 348.68
+    },
+    "temp_c": {
+      "mean": 62.33,
+      "max": 66.0
+    },
+    "util_pct": {
+      "mean": 98.59,
+      "max": 100.0
+    },
+    "gfx_clock_mhz": {
+      "mean": 1775.91,
+      "max": 1965.0
+    },
+    "vram_mib": {
+      "mean": 23286.95,
+      "max": 23292.0
+    }
+  },
+  "min_mem_available_gib": 41.47,
+  "throttle_states": {
+    "0x0000000000000000": 4,
+    "0x0000000000000004": 364
+  }
+}

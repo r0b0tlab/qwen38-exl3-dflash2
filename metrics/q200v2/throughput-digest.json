@@ -1,0 +1,8 @@
+{
+  "n": 180,
+  "completion_tokens_total": 104725,
+  "e2e_tok_s_mean": 142.71,
+  "e2e_tok_s_p50": 148.96,
+  "e2e_tok_s_aggregate": 130.64,
+  "method": "completion_tokens / elapsed_seconds per row (PROCEDURES section 4)"
+}

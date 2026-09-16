@@ -4,9 +4,12 @@
 #
 # Build:
 #   docker build -t qwen38-exl3-dflash2:1.5.0 -f container/Dockerfile .
-# Run (model dir mounted read-only; chat.py is an interactive console app):
-#   docker run -it --rm --gpus all -v /path/to/models:/models:ro \
-#     qwen38-exl3-dflash2:1.5.0
+#
+# Click-run (models auto-download to the named volume on first start):
+#   docker run --gpus all -v qwen38-models:/models \
+#     ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0
+# Run with local models (chat.py is an interactive console app):
+#   docker run -it --rm --gpus all -v /path/to/models:/models:ro qwen38-exl3-dflash2:1.5.0
 # One-shot:
 #   docker run --rm --gpus all -v /path/to/models:/models:ro \
 #     -e PROMPT="Explain photosynthesis in one sentence." -e EXTRA_ARGS="-basic -tps" \
@@ -53,6 +56,10 @@ RUN uv venv --python 3.13 /opt/venv \
     done \
     && uv cache clean
 
+# Click-run model download support (own layer, so the large install above stays cached).
+RUN uv pip install --python /opt/venv/bin/python huggingface_hub hf_transfer \
+    && uv cache clean
+
 # The wheel provides the compiled CUDA extension; the DFlash2 pathway source overlays
 # onto it (additive changes only — the ext .so and everything else from the wheel is
 # preserved). chat.py ships outside the wheel and runs from /opt/exllamav3/examples.
@@ -61,8 +68,9 @@ COPY exllamav3/examples/ /opt/exllamav3/examples/
 COPY container/entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
-# Non-root runtime user; model mounts attach read-only at /models.
-RUN useradd --create-home --uid 10001 runner
+# Non-root runtime user; /models is where a named volume lands, so downloads persist.
+RUN useradd --create-home --uid 10001 runner \
+    && mkdir -p /models && chown runner:runner /models
 USER runner
 
 ENV PATH="/opt/venv/bin:${PATH}" \
@@ -70,7 +78,9 @@ ENV PATH="/opt/venv/bin:${PATH}" \
     DRAFT_DIR=/models/dflash2-exl3 \
     MODE=chatml \
     CTX=262144 \
-    CQ=3
+    CQ=3 \
+    HF_HOME=/models/.hf-cache \
+    HF_HUB_ENABLE_HF_TRANSFER=1
 
 # Build-time smoke as the runtime user (PATH now includes the venv): catches venv
 # paths that only resolve for root.

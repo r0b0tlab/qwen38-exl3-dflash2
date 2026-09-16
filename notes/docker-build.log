@@ -1,79 +1,97 @@
 #0 building with "default" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 3.54kB done
+#1 transferring dockerfile: 4.03kB done
 #1 DONE 0.0s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1
-#2 DONE 0.5s
+#2 DONE 0.4s
 
 #3 docker-image://docker.io/docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 #3 resolve docker.io/docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32 done
 #3 CACHED
 
-#4 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
-#4 DONE 0.3s
+#4 [internal] load metadata for ghcr.io/astral-sh/uv:0.9.15
+#4 ...
 
-#5 [internal] load metadata for ghcr.io/astral-sh/uv:0.9.15
-#5 DONE 0.5s
+#5 [auth] astral-sh/uv:pull token for ghcr.io
+#5 DONE 0.0s
 
-#6 [internal] load .dockerignore
-#6 transferring context: 105B done
-#6 DONE 0.0s
+#6 [internal] load metadata for docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
+#6 DONE 0.3s
 
-#7 [base  1/11] FROM docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867
-#7 resolve docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867 0.0s done
+#4 [internal] load metadata for ghcr.io/astral-sh/uv:0.9.15
+#4 DONE 0.6s
+
+#7 [internal] load .dockerignore
+#7 transferring context: 105B done
 #7 DONE 0.0s
 
 #8 [uv 1/1] FROM ghcr.io/astral-sh/uv:0.9.15@sha256:4c1ad814fe658851f50ff95ecd6948673fffddb0d7994bdb019dcb58227abd52
 #8 resolve ghcr.io/astral-sh/uv:0.9.15@sha256:4c1ad814fe658851f50ff95ecd6948673fffddb0d7994bdb019dcb58227abd52 0.0s done
 #8 DONE 0.0s
 
-#9 [internal] load build context
-#9 transferring context: 265.46kB done
+#9 [base  1/12] FROM docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867
+#9 resolve docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04@sha256:ebef3c171eeef0298e4eb2e4be843105edf3b8b0ac45e0b43acee358e8046867 0.0s done
 #9 DONE 0.0s
 
-#10 [base  2/11] RUN apt-get update     && apt-get install -y --no-install-recommends ca-certificates libgomp1     && rm -rf /var/lib/apt/lists/*
+#10 [base  4/12] WORKDIR /opt
 #10 CACHED
 
-#11 [base  4/11] WORKDIR /opt
+#11 [base  3/12] COPY --from=uv /uv /usr/local/bin/uv
 #11 CACHED
 
-#12 [base  3/11] COPY --from=uv /uv /usr/local/bin/uv
+#12 [base  2/12] RUN apt-get update     && apt-get install -y --no-install-recommends ca-certificates libgomp1     && rm -rf /var/lib/apt/lists/*
 #12 CACHED
 
-#13 [base  5/11] RUN uv venv --python 3.13 /opt/venv     && for i in 1 2 3 4; do         uv pip install --python /opt/venv/bin/python             --index-url https://download.pytorch.org/whl/cu128             "torch==2.10.0"         && uv pip install --python /opt/venv/bin/python             "https://github.com/turboderp-org/exllamav3/releases/download/v1.5.0/exllamav3-1.5.0+cu128.torch2.10.0-cp313-cp313-linux_x86_64.whl"             safetensors rich blessed prompt_toolkit pyperclip requests pydantic         && break || { echo "install attempt $i failed; retrying"; sleep 15; };     done     && uv cache clean
+#13 [base  5/12] RUN uv venv --python 3.13 /opt/venv     && for i in 1 2 3 4; do         uv pip install --python /opt/venv/bin/python             --index-url https://download.pytorch.org/whl/cu128             "torch==2.10.0"         && uv pip install --python /opt/venv/bin/python             "https://github.com/turboderp-org/exllamav3/releases/download/v1.5.0/exllamav3-1.5.0+cu128.torch2.10.0-cp313-cp313-linux_x86_64.whl"             safetensors rich blessed prompt_toolkit pyperclip requests pydantic         && break || { echo "install attempt $i failed; retrying"; sleep 15; };     done     && uv cache clean
 #13 CACHED
 
-#14 [base  6/11] COPY exllamav3/exllamav3/ /opt/venv/lib/python3.13/site-packages/exllamav3/
-#14 DONE 0.1s
+#14 [internal] load build context
+#14 transferring context: 88.63kB done
+#14 DONE 0.0s
 
-#15 [base  7/11] COPY exllamav3/examples/ /opt/exllamav3/examples/
-#15 DONE 0.0s
+#15 [base  6/12] RUN uv pip install --python /opt/venv/bin/python huggingface_hub hf_transfer     && uv cache clean
+#15 0.191 Using Python 3.13.10 environment at: venv
+#15 0.459 Resolved 16 packages in 265ms
+#15 0.475 Downloading hf-transfer (3.4MiB)
+#15 0.806  Downloaded hf-transfer
+#15 0.806 Prepared 1 package in 347ms
+#15 0.807 Installed 1 package in 0.79ms
+#15 0.808  + hf-transfer==0.1.9
+#15 0.810 Clearing cache at: /root/.cache/uv
+#15 0.811 Removed 31 files (11.4MiB)
+#15 DONE 0.8s
 
-#16 [base  8/11] COPY container/entrypoint.sh /opt/entrypoint.sh
-#16 DONE 0.0s
+#16 [base  7/12] COPY exllamav3/exllamav3/ /opt/venv/lib/python3.13/site-packages/exllamav3/
+#16 DONE 0.1s
 
-#17 [base  9/11] RUN chmod +x /opt/entrypoint.sh
-#17 DONE 0.1s
+#17 [base  8/12] COPY exllamav3/examples/ /opt/exllamav3/examples/
+#17 DONE 0.0s
 
-#18 [base 10/11] RUN useradd --create-home --uid 10001 runner
-#18 DONE 0.2s
+#18 [base  9/12] COPY container/entrypoint.sh /opt/entrypoint.sh
+#18 DONE 0.0s
 
-#19 [base 11/11] RUN python -V && python -c "import torch, exllamav3; print('smoke ok:', torch.__version__)"
-#19 0.125 Python 3.13.10
-#19 2.431 W0915 19:26:48.651000 8 torch/utils/cpp_extension.py:118] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
-#19 2.881 smoke ok: 2.10.0+cu128
-#19 DONE 3.7s
+#19 [base 10/12] RUN chmod +x /opt/entrypoint.sh
+#19 DONE 0.1s
 
-#20 exporting to image
-#20 exporting layers
-#20 exporting layers 0.4s done
-#20 exporting manifest sha256:07989fc7f5209038570a93b0a82531c097e2ed7470a396ce28aa375fd5a72524 done
-#20 exporting config sha256:c7fea91f7c7dad00defaecd823d967822c6075a6a08aa427d099495557ac2789 done
-#20 exporting attestation manifest sha256:a3cb0d03698ca6f6d50907039ebd190d8f7630db67a17482c476f58869da1a52 0.0s done
-#20 exporting manifest list sha256:4f428b7cb26bf27226cd38c1d5128e73f8d3b21c0e99be4d753b0250e12cdbad done
-#20 naming to docker.io/library/qwen38-exl3-dflash2:1.5.0 done
-#20 unpacking to docker.io/library/qwen38-exl3-dflash2:1.5.0 0.1s done
-#20 DONE 0.5s
+#20 [base 11/12] RUN useradd --create-home --uid 10001 runner     && mkdir -p /models && chown runner:runner /models
+#20 DONE 0.2s
+
+#21 [base 12/12] RUN python -V && python -c "import torch, exllamav3; print('smoke ok:', torch.__version__)"
+#21 0.106 Python 3.13.10
+#21 2.536 W0916 13:01:51.783000 8 torch/utils/cpp_extension.py:118] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
+#21 2.971 smoke ok: 2.10.0+cu128
+#21 DONE 3.7s
+
+#22 exporting to image
+#22 exporting layers
+#22 exporting layers 0.4s done
+#22 exporting manifest sha256:7a13262d10c7a48e0ccddbaa7839dcfb17ed139b7d519337ac07ddc7e2d84e7f done
+#22 exporting config sha256:bad68d6e28ee2ba83922c06301090e7c7ce822ec20cdfa6fa8273e0d02b421c2 done
+#22 exporting attestation manifest sha256:b9229f05bc0142cb5defecea6b5ff261eda4261f2320346f2607c212f2071a22 0.0s done
+#22 exporting manifest list sha256:9b17e619a46aaacc4869e1fe48660dfd5e5182846c6e19c65c6122f50a50629a done
+#22 naming to docker.io/library/qwen38-exl3-dflash2:1.5.0 done
+#22 unpacking to docker.io/library/qwen38-exl3-dflash2:1.5.0 0.1s done
+#22 DONE 0.6s
 exit=0

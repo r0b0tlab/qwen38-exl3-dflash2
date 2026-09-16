@@ -50,6 +50,16 @@ python examples/chat.py -m ../models/qwen38-27b-exl3 -mode chatml \
 
 ## Quickstart (container)
 
+Click-run — pulls the prebuilt image and downloads the EXL3 models into a named volume on
+first start (no local files needed; ~17 GB on the first run):
+
+```bash
+docker run --gpus all -v qwen38-models:/models \
+  ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0
+```
+
+With local models, or to build the image yourself:
+
 ```bash
 # requires the engine fork cloned into exllamav3/ first (see Reproduce)
 docker build -t qwen38-exl3-dflash2:1.5.0 -f container/Dockerfile .
