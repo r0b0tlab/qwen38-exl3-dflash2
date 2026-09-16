@@ -23,6 +23,8 @@ failure `ifeval-023` (8192 ceiling). hard_reasoning was graded by independent re
 found and documented in the run dir.
 
 - Dataset sha256 `74623ab9...`; run identity `c649677d...`; image `sha256:caf1a95b...`.
+- Kit revision (2026-09-16): four defective hard_reasoning entries were corrected upstream
+  post-run; the dataset sha256 is now `66a75701...` — this run scored the pre-revision bytes.
 - Chat kwargs `{enable_thinking, thinking, reasoning_effort=low}`; max_tokens 8192; 1 worker.
 - The published kit was missing two imported modules (`admission_control`, `niah_common`);
   provided as PYTHONPATH shims, frozen bytes untouched.

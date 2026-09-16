@@ -22,6 +22,10 @@ Method notes:
   reviewer `hermes-agent`; evidence in `q200v2/manual-evidence.json`, sha256 `af5157fb…`).
   Four frozen-reference defects were found during review (documented in the run dir).
   The only ungraded row is the disclosed transport failure `ifeval-023` (8192 ceiling).
+- Kit revision: those four defective entries were corrected upstream on 2026-09-16
+  (`r0b0tlab/r0b0bench`, commit "Q200v2: correct four hard_reasoning entries"; dataset sha256
+  now `66a75701cbeea69f212e1c8be92aab9efaf3fa4d7af3c6911c8f7864a17d8d14`). This run scored the
+  pre-revision bytes (`74623ab9…`).
 - NIAH deviations disclosed: generation reserve 256 (thinking-enabled serve), client on the
   serve host, one request per variant; the 3n prompt shares a ~173k-token prefix with 2n, so
   its shorter wall time reflects cross-request prefix reuse, not raw prefill speed.
