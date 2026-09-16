@@ -7,7 +7,7 @@
   (single pass, exit 0; MTP + vision quantized).
 - Draft `models/dflash2-exl3` — EXL3 4.00 bpw (1.2 GB) from `incoai/Qwen3.8-27B-DFlash2`;
   conv `base_kernel` + selector codebooks fp16 (uncalibrated).
-- Engine fork `exllamav3`, branch `dflash2-pathway`, tip `4960047` (8 commits over v1.5.0).
+- Engine fork `exllamav3`, branch `dflash2-pathway`, tip `5cdf6bc` (9 commits over v1.5.0).
 - Container image `qwen38-exl3-dflash2:1.5.0`.
 
 ## Gates
@@ -69,7 +69,7 @@ real-checkpoint load) green on the final tree; existing generator tests pass.
 ## Publication
 
 - Results repo: https://github.com/r0b0tlab/qwen38-exl3-dflash2
-- Engine fork: https://github.com/r0b0tlab/exllamav3 (branch `dflash2-pathway`, tip `4960047`)
+- Engine fork: https://github.com/r0b0tlab/exllamav3 (branch `dflash2-pathway`, tip `5cdf6bc`)
 
 ## Pending
 
