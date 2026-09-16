@@ -25,6 +25,16 @@ Conversion: ExLlamaV3 v1.5.0 (fork branch `dflash2-pathway`), single pass with
 
 Pair with the DFlash2 draft: [r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw](https://huggingface.co/r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw).
 
+## Resource requirements (RTX 3090, 24 GB)
+
+- Weights on disk: **15.4 GiB** (this repo); pair with the draft repo (1.2 GiB).
+- VRAM at the full 262,144-token context with the DFlash2 draft, one sequence: ~21.7 GB
+  loaded, 20.7 GiB mean while serving, up to 22.7 GiB during long-context requests.
+- KV cache (16 full-attention layers) at 262,144 tokens: fp16 ~16.0 GiB, 8-bit ~8.0,
+  6-bit ~6.0, 4-bit ~4.0, 3-bit ~3.0 GiB (cq3 is the validated setting).
+- Speculative decoding reserves ~1.22 GiB of fp32 GDN verify history per sequence slot
+  (48 layers x 8 history rows); without a draft that drops to ~0.15 GiB/slot.
+
 ## Use
 
 - **ExLlamaV3** (fork clone, branch `dflash2-pathway`):

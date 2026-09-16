@@ -26,6 +26,13 @@ Requires the ExLlamaV3 fork with the DFlash2 pathway (branch `dflash2-pathway`,
 https://github.com/r0b0tlab/exllamav3) — arch `DFlash2DraftModel`, selected automatically
 via `-dm <dir>`.
 
+## Resource requirements
+
+- Weights on disk: **1.2 GiB** (this repo). Target repo: 15.4 GiB.
+- This draft adds ~1.22 GiB of fp32 GDN verify states (per sequence slot) to the target's
+  footprint; its own KV is windowed (5 sliding-window layers, tens of MB). Target at full
+  262,144-token context with cq3: ~21.7 GB loaded, peak ~22.7 GiB.
+
 ## Use
 
 ```bash

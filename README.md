@@ -18,6 +18,39 @@ the parents.
 At 150k-token depth (open-ended text): 24.5 tok/s, acceptance 1.79. Full numbers,
 methodology and raw JSON: `notes/ACCEPTANCE.md`, `notes/RESULTS.md`.
 
+## Resource requirements (RTX 3090, 24 GB)
+
+**On disk:**
+
+| artifact | size |
+| --- | --- |
+| target EXL3 4.00 bpw (6 bpw head, vision 6, MTP 4) | 15.4 GiB |
+| draft DFlash2 EXL3 4.00 bpw (conv/selector kept fp16) | 1.2 GiB |
+| BF16 sources (needed for conversion only) | 48.4 GiB + 3.4 GiB |
+
+**VRAM at 262,144-token context with DFlash2 active, one sequence:**
+
+| state | usage |
+| --- | --- |
+| loaded and idle (torch) | 21.7 GB |
+| resident serving, mean over the Q200v2 run (nvidia-smi, 2 s cadence) | 20.7 GiB |
+| peak during long-context requests (nvidia-smi) | 22.7 GiB |
+
+Budget math behind those numbers:
+
+- weights as loaded: ~15.5 GiB target + ~1.2 GiB draft
+- KV cache (16 full-attention layers; `16 × 4 kv heads × 256 dim × 2 (K+V) × bytes` per
+  token) at 262,144 tokens: fp16 ≈ 16.0 GiB, 8-bit ≈ 8.0, 6-bit ≈ 6.0, 4-bit ≈ 4.0,
+  3-bit ≈ 3.0 GiB — cq3 is the validated setting at this context
+- linear-attention (GDN) recurrent states: ≈ 1.22 GiB **per sequence slot** with
+  speculative decoding (48 layers × 8 fp32 history rows); ≈ 0.15 GiB/slot without a
+  draft attached
+- prefill staging (`EXL3_QC_STAGING=1`) plus CUDA context/allocator: ≈ 2.5 GiB
+
+Concurrency: each extra sequence costs its own ~1.2 GiB of verify history; four
+concurrent sequences measured at 19.5 GiB with short contexts (1024 tokens/slot), and at
+the full 262k context the card fits a single sequence.
+
 ## Layout
 
 - `exllamav3/` — engine fork (branch `dflash2-pathway`, based on v1.5.0): DFlash2 architecture,
