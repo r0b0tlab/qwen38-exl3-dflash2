@@ -18,8 +18,10 @@ Method notes:
   `sha256:caf1a95b…`; chat kwargs `{enable_thinking, thinking, reasoning_effort=low}`;
   max_tokens 8192; 1 worker. One row (`ifeval-023`) was length-truncated at the 8192
   ceiling and is disclosed as a transport failure (fail-closed).
-- 20 `hard_reasoning` rows are `ungraded` pending independent manual review
-  (`--manual-evidence`); status INCOMPLETE is the expected state without it.
+- 20 `hard_reasoning` rows: graded 19/20 via `--manual-evidence` (independent review,
+  reviewer `hermes-agent`; evidence in `q200v2/manual-evidence.json`, sha256 `af5157fb…`).
+  Four frozen-reference defects were found during review (documented in the run dir).
+  The only ungraded row is the disclosed transport failure `ifeval-023` (8192 ceiling).
 - NIAH deviations disclosed: generation reserve 256 (thinking-enabled serve), client on the
   serve host, one request per variant; the 3n prompt shares a ~173k-token prefix with 2n, so
   its shorter wall time reflects cross-request prefix reuse, not raw prefill speed.

@@ -15,10 +15,12 @@ thinking split into `reasoning_content`). Campaign artifacts under
 | gsm8k | 80 | 80 | 80 | 79 | 98.75 % |
 | humaneval | 40 | 40 | 40 | 40 | 100 % |
 | ifeval | 40 | 39 | 39 | 33 | 84.62 % |
-| hard_reasoning | 20 | 20 | 0 (manual) | — | ungraded by design |
+| hard_reasoning | 20 | 20 | 20 | 19 | 95.0 % |
 
-correct 152 / incorrect 7 / ungraded 21; transport failure `ifeval-023` (8192 ceiling,
-fail-closed disclosed); status INCOMPLETE without manual evidence (as designed).
+correct 171 / incorrect 8 / ungraded 1; the only ungraded row is the disclosed transport
+failure `ifeval-023` (8192 ceiling). hard_reasoning was graded by independent review
+(manual-evidence sha256 `af5157fb…`); 19/20 pass, and four frozen-reference defects were
+found and documented in the run dir.
 
 - Dataset sha256 `74623ab9...`; run identity `c649677d...`; image `sha256:caf1a95b...`.
 - Chat kwargs `{enable_thinking, thinking, reasoning_effort=low}`; max_tokens 8192; 1 worker.

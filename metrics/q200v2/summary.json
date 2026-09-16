@@ -10,7 +10,7 @@
     "transport failure: ifeval-023",
     "missing/invalid finish_reason: ifeval-023"
   ],
-  "correct_count": 152,
+  "correct_count": 171,
   "dataset_count": 180,
   "dataset_sha256": "74623ab9b075120cd6f7a93059cc16d8817a6039dd20118b8f0350279f8b1ed6",
   "families": {
@@ -25,14 +25,14 @@
       "ungraded": 0
     },
     "hard_reasoning": {
-      "accuracy_pct": null,
-      "correct": 0,
-      "grade_complete": 0,
+      "accuracy_pct": 95.0,
+      "correct": 19,
+      "grade_complete": 20,
       "grader_errors": 0,
-      "incorrect": 0,
+      "incorrect": 1,
       "n": 20,
       "transported": 20,
-      "ungraded": 20
+      "ungraded": 0
     },
     "humaneval": {
       "accuracy_pct": 100.0,
@@ -58,8 +58,15 @@
   "grade_complete": false,
   "grader_error_count": 0,
   "image_id": "sha256:caf1a95b886e50be2218621a79057ce68897f55497721c1344b3c061bbca1a8e",
-  "incorrect_count": 7,
-  "manual_evidence": null,
+  "incorrect_count": 8,
+  "manual_evidence": {
+    "method": "independent_manual_review",
+    "path": "/home/am/r0b0bench-q200v2/runs/q200v2-text-20260916/manual-evidence.json",
+    "reviewer": "hermes-agent (independent LLM review, 2026-09-16)",
+    "row_count": 20,
+    "run_identity_sha256": "c649677da6e0e64b0a79f2147000b48d07ff5791704f5e616384bf9a23f0d7c4",
+    "sha256": "af5157fb95e0787896a87ab53ad386cd94ef67f4355092ae60e2a8bfb7e95e9e"
+  },
   "model": "qwen38-27b-exl3-dflash2",
   "not_admitted_count": 0,
   "not_admitted_event": null,
@@ -89,5 +96,5 @@
   "status": "INCOMPLETE",
   "transport_complete": false,
   "transport_count": 179,
-  "ungraded_count": 21
+  "ungraded_count": 1
 }
