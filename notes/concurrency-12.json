@@ -1,0 +1,71 @@
+{
+  "target": "models/qwen38-27b-exl3",
+  "draft": "models/dflash2-exl3",
+  "max_new_tokens": 256,
+  "results": [
+    {
+      "batch": 1,
+      "wall_s": 2.348,
+      "jobs_done": 1,
+      "total_new_tokens": 256,
+      "tokens_per_seq": 256.0,
+      "aggregate_tps": 109.04,
+      "per_seq_tps": 109.04,
+      "acceptance_length": 3.657,
+      "ttft_s": 0.094,
+      "eos_event_keys": [
+        "accepted_draft_tokens",
+        "cached_pages",
+        "cached_tokens",
+        "eos",
+        "eos_reason",
+        "full_completion",
+        "identifier",
+        "job",
+        "new_tokens",
+        "prompt_tokens",
+        "rejected_draft_tokens",
+        "serial",
+        "stage",
+        "text",
+        "time_enqueued",
+        "time_generate",
+        "time_prefill",
+        "token_ids"
+      ],
+      "tag": "bsz1"
+    },
+    {
+      "batch": 2,
+      "wall_s": 3.804,
+      "jobs_done": 2,
+      "total_new_tokens": 512,
+      "tokens_per_seq": 256.0,
+      "aggregate_tps": 134.61,
+      "per_seq_tps": 67.3,
+      "acceptance_length": 3.141,
+      "ttft_s": 0.163,
+      "eos_event_keys": [
+        "accepted_draft_tokens",
+        "cached_pages",
+        "cached_tokens",
+        "eos",
+        "eos_reason",
+        "full_completion",
+        "identifier",
+        "job",
+        "new_tokens",
+        "prompt_tokens",
+        "rejected_draft_tokens",
+        "serial",
+        "stage",
+        "text",
+        "time_enqueued",
+        "time_generate",
+        "time_prefill",
+        "token_ids"
+      ],
+      "tag": "bsz2"
+    }
+  ]
+}
