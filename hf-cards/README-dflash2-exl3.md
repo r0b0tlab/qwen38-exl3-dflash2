@@ -20,11 +20,12 @@ block-diffusion draft for use with [r0b0tlab/Qwen3.8-27B-EXL3-4.00bpw](https://h
 
 Backbone Linears quantized at 4.00 bpw; the dynamic-convolution `base_kernel` tensors and the
 candidate-selector codebooks stay fp16 (uncalibrated). Quantization is acceptance-neutral on
-this stack (mean acceptance 5.474 EXL3 vs 5.463 BF16 draft).
+this stack (overlay measurement: mean acceptance 5.474 EXL3 vs 5.463 BF16 draft). Native
+engine GSM8K: **5.657** AL / **162.9 tok/s**.
 
-Requires the ExLlamaV3 fork with the DFlash2 pathway (branch `dflash2-pathway`,
-https://github.com/r0b0tlab/exllamav3) — arch `DFlash2DraftModel`, selected automatically
-via `-dm <dir>`.
+Requires [`r0b0tlab/exllamav3`](https://github.com/r0b0tlab/exllamav3) branch `community`
+@ `355c6ee` — native `DFlash2DraftModel`, selected automatically via `-dm <dir>`. Do not
+use the old `dflash2-pathway` overlay.
 
 ## Resource requirements
 
@@ -44,7 +45,7 @@ Container (click-run, auto-downloads both repos on first run):
 
 ```bash
 docker run --gpus all -v qwen38-models:/models \
-  ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0
+  ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0-native
 ```
 
 Metrics and harnesses: https://github.com/r0b0tlab/qwen38-exl3-dflash2

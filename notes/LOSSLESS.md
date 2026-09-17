@@ -1,19 +1,29 @@
-# T=1.0 sampled-distribution sanity (2026-09-15)
+# T=1.0 sampled-distribution sanity
 
 Method: `scripts/sampled_sanity_check.py` — 6 fixed prompts x 8 samples, max 96 tokens,
 CategoricalSampler temperature 1.0; DFlash2 EXL3 draft vs autoregressive on the same
-quantized target. The q-aware DFlash2 verify is lossless w.r.t. the quantized target for
-plain temperature/top-k/top-p samplers, so the two arms' output distributions should agree
-closely; statistics compared: mean chars, distinct-token rate, top-20 token share, tok/s.
+quantized target.
+
+Native DFlash2 (community @ 355c6ee) verifies with accept-while-match, not the old
+overlay's q-aware rejection sampler. Upstream treats the selector as T-independent;
+the two arms should still agree closely on length and token-mass stats.
+
+## Native (2026-09-17)
+
+| Arm | mean chars | distinct-token rate | top-20 share | tok/s |
+| --- | --- | --- | --- | --- |
+| DFlash2 EXL3 | 456.0 | 0.2741 | 0.3090 | 90.8 |
+| Autoregressive | 448.4 | 0.2587 | 0.3221 | 42.3 |
+
+Verdict: no glaring divergence — mean length within 8 chars, top-20 share within 2 pp,
+distinct-token rate within ~6% relative. No degenerate repetition. PASS.
+Raw: `notes/sampled-sanity-native.log`.
+
+## Overlay baseline (2026-09-15)
 
 | Arm | mean chars | distinct-token rate | top-20 share | tok/s |
 | --- | --- | --- | --- | --- |
 | DFlash2 EXL3 | 451.25 | 0.2643 | 0.3124 | 89.0 |
 | Autoregressive | 452.31 | 0.2483 | 0.3146 | 42.1 |
-
-Verdict: no glaring divergence — mean length within 1 char, top-20 share within 1%,
-distinct-token rate within ~6% relative (sampling noise at 48 x 96 tokens). No sign of the
-degenerate repetition or shifted mass profile a biased accept would produce. PASS per plan
-Task 3.5; the sampled verify path is validated on real outputs.
 
 Raw: `notes/sampled-sanity.log`.

@@ -1,0 +1,57 @@
+{
+  "summary": {
+    "target": "models/qwen38-27b-exl3",
+    "draft": "mtp",
+    "n": 5,
+    "mean_acceptance_length": 4.129201989857845,
+    "mean_tok_per_s": 98.66600100999766,
+    "hit_token_cap": 1
+  },
+  "per_request": [
+    {
+      "new_tokens": 207,
+      "accepted_draft_tokens": 154,
+      "rejected_draft_tokens": 0,
+      "rounds": 53,
+      "acceptance_length": 3.9056603773584904,
+      "tok_per_s": 35.15461434086626,
+      "time": 5.8882739543914795
+    },
+    {
+      "new_tokens": 233,
+      "accepted_draft_tokens": 175,
+      "rejected_draft_tokens": 0,
+      "rounds": 58,
+      "acceptance_length": 4.017241379310345,
+      "tok_per_s": 106.42669721432654,
+      "time": 2.189300298690796
+    },
+    {
+      "new_tokens": 454,
+      "accepted_draft_tokens": 350,
+      "rejected_draft_tokens": 0,
+      "rounds": 104,
+      "acceptance_length": 4.365384615384615,
+      "tok_per_s": 125.14817883531292,
+      "time": 3.627699613571167
+    },
+    {
+      "new_tokens": 172,
+      "accepted_draft_tokens": 131,
+      "rejected_draft_tokens": 0,
+      "rounds": 41,
+      "acceptance_length": 4.195121951219512,
+      "tok_per_s": 117.9230448724288,
+      "time": 1.45857834815979
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 389,
+      "rejected_draft_tokens": 0,
+      "rounds": 123,
+      "acceptance_length": 4.162601626016261,
+      "tok_per_s": 108.6774697870538,
+      "time": 4.711188077926636
+    }
+  ]
+}

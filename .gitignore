@@ -2,5 +2,6 @@ models/
 env/
 work/
 exllamav3/
+container/*.so
 __pycache__/
 *.pyc

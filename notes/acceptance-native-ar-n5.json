@@ -1,0 +1,57 @@
+{
+  "summary": {
+    "target": "models/qwen38-27b-exl3",
+    "draft": "none",
+    "n": 5,
+    "mean_acceptance_length": 1.0,
+    "mean_tok_per_s": 42.35488399782526,
+    "hit_token_cap": 1
+  },
+  "per_request": [
+    {
+      "new_tokens": 207,
+      "accepted_draft_tokens": 0,
+      "rejected_draft_tokens": 0,
+      "rounds": 207,
+      "acceptance_length": 1.0,
+      "tok_per_s": 42.22448557474276,
+      "time": 4.902368783950806
+    },
+    {
+      "new_tokens": 233,
+      "accepted_draft_tokens": 0,
+      "rejected_draft_tokens": 0,
+      "rounds": 233,
+      "acceptance_length": 1.0,
+      "tok_per_s": 41.80151406700901,
+      "time": 5.573960781097412
+    },
+    {
+      "new_tokens": 446,
+      "accepted_draft_tokens": 0,
+      "rejected_draft_tokens": 0,
+      "rounds": 446,
+      "acceptance_length": 1.0,
+      "tok_per_s": 42.881911570989516,
+      "time": 10.400655746459961
+    },
+    {
+      "new_tokens": 172,
+      "accepted_draft_tokens": 0,
+      "rejected_draft_tokens": 0,
+      "rounds": 172,
+      "acceptance_length": 1.0,
+      "tok_per_s": 42.73428769768717,
+      "time": 4.024871110916138
+    },
+    {
+      "new_tokens": 512,
+      "accepted_draft_tokens": 0,
+      "rejected_draft_tokens": 0,
+      "rounds": 512,
+      "acceptance_length": 1.0,
+      "tok_per_s": 42.13222107869784,
+      "time": 12.152219533920288
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+prompt tokens: 150000 (ctx 262144)
+{
+  "prompt_tokens": 150000,
+  "new_tokens": 200,
+  "prefill_seconds": 252.4,
+  "prefill_tok_per_s": 594.3,
+  "decode_seconds": 7.92,
+  "decode_tok_per_s": 25.26,
+  "acceptance_length": 1.818,
+  "vram_used_gb": 23.13
+}
+continuation tail: ',”'

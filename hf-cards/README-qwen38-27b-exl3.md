@@ -19,9 +19,10 @@ tags:
 EXL3 (ExLlamaV3) quantization of [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B),
 tuned for a 24 GB RTX 3090 at the model's full 262,144-token context.
 
-Conversion: ExLlamaV3 v1.5.0 (fork branch `dflash2-pathway`), single pass with
+Conversion: ExLlamaV3 v1.5.0, single pass with
 `convert.py -b 4.00 -vb 6 -mb 4 -hb 6` — 4.00 bpw decoder, 6 bpw lm_head, vision tower
-6 bpw, native MTP head 4 bpw.
+6 bpw, native MTP head 4 bpw. Serve with [`r0b0tlab/exllamav3`](https://github.com/r0b0tlab/exllamav3)
+branch `community` @ `355c6ee` (native DFlash2 CUDA; no `dflash2-pathway` overlay).
 
 Pair with the DFlash2 draft: [r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw](https://huggingface.co/r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw).
 
@@ -37,7 +38,7 @@ Pair with the DFlash2 draft: [r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw](https:/
 
 ## Use
 
-- **ExLlamaV3** (fork clone, branch `dflash2-pathway`):
+- **ExLlamaV3** (fork clone, branch `community`):
 
   ```bash
   python examples/chat.py -m <this-dir> -mode chatml \
@@ -48,14 +49,14 @@ Pair with the DFlash2 draft: [r0b0tlab/Qwen3.8-27B-DFlash2-EXL3-4.00bpw](https:/
 
   ```bash
   docker run --gpus all -v qwen38-models:/models \
-    ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0
+    ghcr.io/r0b0tlab/qwen38-exl3-dflash2:1.5.0-native
   ```
 
 ## Validation (single RTX 3090, 24 GB)
 
-- Acceptance length, GSM8K greedy: **5.474** (DFlash2) vs 4.101 (MTP head) vs 1.000
-  (autoregressive); 152.4 tok/s decode at 8k context.
-- 262k-context load (cq3 cache, 23.2 GB peak); 150k-token prefill at 599 tok/s.
+- Acceptance length, GSM8K greedy: **5.657** (DFlash2) vs 4.120 (MTP head) vs 1.000
+  (autoregressive); **162.9 tok/s** decode at 8k context (native DFlash2; +6.9% vs overlay).
+- 262k-context load (cq3 cache, 23.13 GB peak); 150k-token prefill at 594 tok/s.
 - Multi-needle NIAH at 262,080 tokens: PASS (needles at 33/66%) and PASS (33/66/90%).
 - Q200v2 text-180: gsm8k 98.75 %, humaneval 100 %, ifeval 84.62 % (hard_reasoning manual).
 

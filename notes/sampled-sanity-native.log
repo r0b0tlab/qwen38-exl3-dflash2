@@ -1,0 +1,14 @@
+{
+  "dflash2": {
+    "mean_chars": 455.9791666666667,
+    "distinct_token_rate": 0.2740963855421687,
+    "top20_share": 0.30903614457831324,
+    "tok_per_s": 90.84878916502791
+  },
+  "autoregressive": {
+    "mean_chars": 448.3541666666667,
+    "distinct_token_rate": 0.2586520947176685,
+    "top20_share": 0.32210078931390407,
+    "tok_per_s": 42.34091801084487
+  }
+}

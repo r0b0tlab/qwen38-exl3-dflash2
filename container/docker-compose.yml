@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: container/Dockerfile
-    image: qwen38-exl3-dflash2:1.5.0
+    image: qwen38-exl3-dflash2:1.5.0-native
     container_name: qwen38-exl3-dflash2
     runtime: nvidia
     environment:
