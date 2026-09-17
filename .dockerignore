@@ -7,3 +7,7 @@ scripts/
 *.log
 __pycache__/
 *.pyc
+exllamav3/.git
+exllamav3/build
+exllamav3/*.so
+container/*.so
