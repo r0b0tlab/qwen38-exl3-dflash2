@@ -1,8 +1,11 @@
 {
   "n": 180,
-  "completion_tokens_total": 104725,
-  "e2e_tok_s_mean": 142.71,
-  "e2e_tok_s_p50": 148.96,
-  "e2e_tok_s_aggregate": 130.64,
-  "method": "completion_tokens / elapsed_seconds per row (PROCEDURES section 4)"
+  "completion_tokens_total": 115404,
+  "e2e_tok_s_mean": 152.82,
+  "e2e_tok_s_p50": 159.29,
+  "e2e_tok_s_aggregate": 144.73,
+  "method": "completion_tokens / elapsed_seconds per row (PROCEDURES section 4)",
+  "includes_length_truncated": true,
+  "client": "host r0b0bench against container serve 127.0.0.1:8889",
+  "workers": 1
 }

@@ -9,7 +9,8 @@
 - Engine: r0b0tlab/exllamav3 `community` @ `355c6ee` (v1.5.0 + upstream native DFlash2
   CUDA, GDN rewind, TILEBLOCKS_M shapes 5/6, codebook alias). **No dflash2-pathway overlay.**
 - Container image `qwen38-exl3-dflash2:1.5.0-native` (CUDA 13 runtime, torch 2.10.0+cu130,
-  sm_86 extension).
+  sm_86 extension, `serve_openai.py` at `/opt/serve_openai.py`). GPU evals used
+  `container/run-serve.sh` (device binds). Q200v2 + NIAH: `notes/Q200V2-AND-NIAH.md`.
 
 ### Acceptance (GSM8K greedy, max 512, ctx 8192)
 

@@ -137,8 +137,8 @@ docker run --rm --gpus all -v "$PWD/models:/models:ro" \
 | Acceptance >= 4.0 and > MTP + 0.3 | `scripts/acceptance_check.py` n=40 | PASS — 5.657 vs 4.120, 162.9 tok/s |
 | 262k-context load + 150k prefill + decode | `scripts/long_context_check.py` | PASS — 594 tok/s prefill, 25.3 tok/s decode, 23.13 GB |
 | T=1.0 sampled distribution sanity | `scripts/sampled_sanity_check.py` | PASS — notes/LOSSLESS.md |
-
-Q200v2 and NIAH were not re-run: weights are unchanged from the overlay campaign.
+| Q200v2 text-180 in `:1.5.0-native` | `notes/Q200V2-AND-NIAH.md` | 172/7/1; humaneval 40/40; hard_reasoning 20/20; ifeval-023 disclosed |
+| Multi-needle NIAH 262,080 | `scripts/niah_multikey.py` via container serve | PASS 2n (613.8 s) and PASS 3n (122.8 s, prefix reuse) |
 
 ## Licenses
 

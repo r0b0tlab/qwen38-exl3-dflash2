@@ -1,34 +1,24 @@
-# Metrics — Q200v2 + NIAH + concurrency (RTX 3090 campaign, 2026-09-16)
+# Metrics — Q200v2 + NIAH (native container, 2026-09-17)
 
-Sanitized summaries only; raw traces stay in the local run directories
-(`/home/am/r0b0bench-q200v2/runs/`), per r0b0bench rules.
+Sanitized summaries. Raw rows stay in `/home/am/r0b0bench-q200v2/runs/q200v2-native-container-20260917/`.
 
 | file | what |
 | --- | --- |
-| `q200v2/summary.json` | Kit-produced run summary (frozen Q200v2 text-180). Scores, per-family transport/grade counts, identity hashes, response-budget audit. |
-| `q200v2/throughput-digest.json` | E2E throughput per PROCEDURES section 4: `completion_tokens / elapsed_seconds` per row, mean / p50 / aggregate over n=180. |
-| `q200v2/telemetry.tsv` + `telemetry-digest.json` | Serve-host telemetry at 2 s cadence (power, temp, util, clock, throttle, VRAM, MemAvailable, swap); digest is load-only mean/max plus min MemAvailable and throttle states. |
-| `niah/niah-2n.json`, `niah/niah-3n.json` | Max-context multi-needle NIAH at 262,080 tokens (33/66 % and 33/66/90 %, answer = last). |
-| `niah/telemetry.tsv` + `telemetry-digest.json` | Telemetry for the NIAH phase. |
-| `concurrency/ladder-1-2-4.json` | DFlash2 draft-path concurrency ladder (batch 1/2/4): aggregate and per-sequence tok/s, acceptance, TTFT. |
+| `q200v2/summary.json` | Kit-produced run summary (frozen Q200v2 text-180, dataset `66a75701…`). |
+| `q200v2/throughput-digest.json` | E2E throughput per PROCEDURES §4 over n=180. |
+| `q200v2/telemetry.tsv` + `telemetry-digest.json` | 2 s host telemetry; digest is load-only (util > 0). |
+| `q200v2/manual-evidence.json` | Independent review for 20 hard_reasoning rows. |
+| `niah/niah-2n.json`, `niah/niah-3n.json` | Max-context multi-needle NIAH at 262,080 tokens. |
+| `concurrency/ladder-1-2-4.json` | Overlay-era concurrency ladder (not re-run this campaign). |
 
 Method notes:
 
-- Q200v2 identity: dataset sha256 `74623ab9…`, run identity `c649677d…`, image
-  `sha256:caf1a95b…`; chat kwargs `{enable_thinking, thinking, reasoning_effort=low}`;
-  max_tokens 8192; 1 worker. One row (`ifeval-023`) was length-truncated at the 8192
-  ceiling and is disclosed as a transport failure (fail-closed).
-- 20 `hard_reasoning` rows: graded 19/20 via `--manual-evidence` (independent review,
-  reviewer `hermes-agent`; evidence in `q200v2/manual-evidence.json`, sha256 `af5157fb…`).
-  Four frozen-reference defects were found during review (documented in the run dir).
-  The only ungraded row is the disclosed transport failure `ifeval-023` (8192 ceiling).
-- Kit revision: those four defective entries were corrected upstream on 2026-09-16
-  (`r0b0tlab/r0b0bench`, commit "Q200v2: correct four hard_reasoning entries"; dataset sha256
-  now `66a75701cbeea69f212e1c8be92aab9efaf3fa4d7af3c6911c8f7864a17d8d14`). This run scored the
-  pre-revision bytes (`74623ab9…`).
-- NIAH deviations disclosed: generation reserve 256 (thinking-enabled serve), client on the
-  serve host, one request per variant; the 3n prompt shares a ~173k-token prefix with 2n, so
-  its shorter wall time reflects cross-request prefix reuse, not raw prefill speed.
-- BFCL-hard20 companion lane: **NOT_IMPLEMENTED** — the wrapper drives official `bfcl-eval`
-  multi-turn tool-calling; this serve path has no function-calling surface, and scoring it
-  would be a fabricated result.
+- Q200v2 identity: dataset sha256 `66a75701…`, run identity `7fd44c0c…`, serve image
+  `sha256:982fad27…`; chat kwargs `{enable_thinking, thinking, reasoning_effort=low}`;
+  max_tokens 8192; 1 worker. `ifeval-023` length-truncated at 8192 (disclosed).
+- hard_reasoning 20/20 via `--manual-evidence` (reviewer `hermes-agent`, method
+  `independent_manual_review`, evidence sha256 `306ca3cf…`).
+- Humaneval sandbox image `sha256:caf1a95b…` with kit default timeout 8 s.
+- NIAH generation reserve 256 (thinking). 3n elapsed is prefix/KV reuse after 2n.
+- BFCL-hard20: NOT_IMPLEMENTED (no tools surface).
+- Serve: container `qwen38-exl3-dflash2:1.5.0-native` via `container/run-serve.sh`.

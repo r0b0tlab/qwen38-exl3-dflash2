@@ -42,6 +42,7 @@ RUN uv venv --python 3.13 /opt/venv \
         pillow pyyaml marisa-trie pydantic llguidance triton \
         blessed prompt_toolkit pyperclip requests \
         huggingface_hub hf_transfer
+RUN uv pip install --python /opt/venv/bin/python transformers
 
 COPY exllamav3 /src/exllamav3
 WORKDIR /src/exllamav3
@@ -54,20 +55,23 @@ ENV DEBIAN_FRONTEND=noninteractive \
     HF_HUB_ENABLE_HF_TRANSFER=0
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libgomp1 \
+    && apt-get install -y --no-install-recommends ca-certificates libgomp1 gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /opt/uv-python /opt/uv-python
 COPY --from=build /opt/venv /opt/venv
 COPY --from=build /src/exllamav3/examples /opt/exllamav3/examples
 COPY container/entrypoint.sh /opt/entrypoint.sh
-RUN chmod +x /opt/entrypoint.sh
+COPY container/serve_openai.py /opt/serve_openai.py
+RUN chmod +x /opt/entrypoint.sh /opt/serve_openai.py
 
 RUN useradd --create-home --uid 10001 runner \
     && mkdir -p /models && chown runner:runner /models
 USER runner
 
 ENV PATH="/opt/venv/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/venv/lib/python3.13/site-packages/nvidia/cu13/lib:${LD_LIBRARY_PATH}" \
+    TRITON_LIBCUDA_PATH=/usr/lib/x86_64-linux-gnu \
     MODEL_DIR=/models/qwen38-27b-exl3 \
     DRAFT_DIR=/models/dflash2-exl3 \
     MODE=chatml \

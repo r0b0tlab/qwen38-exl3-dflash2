@@ -1,129 +1,129 @@
 {
- "schema": "r0b0tlab.qwen38.manual_evidence.v1",
- "dataset_sha256": "74623ab9b075120cd6f7a93059cc16d8817a6039dd20118b8f0350279f8b1ed6",
- "run_identity_sha256": "c649677da6e0e64b0a79f2147000b48d07ff5791704f5e616384bf9a23f0d7c4",
- "reviewer": "hermes-agent (independent LLM review, 2026-09-16)",
- "method": "independent_manual_review",
- "rows": [
-  {
-   "id": "hard-00",
-   "content_sha256": "1d065061e24b76c7360d961afc56591654d3d599a84d540d4a134f21cf8e432c",
-   "passed": true,
-   "rationale": "Correct: proves 6 | n^3-n and that 24 | p^3-p for every prime p>3. The frozen reference's counterexample is arithmetically broken (7^3-7=336, which IS divisible by 24; its '342' is 7^3-1); the response's claim is the mathematically true one."
-  },
-  {
-   "id": "hard-01",
-   "content_sha256": "1a940d49454bb38714de336c123eb4ab755601d12636846ff1e5ff8b33020e43",
-   "passed": true,
-   "rationale": "Exact 13/4 with a valid gap-symmetry argument and an independent tail-sum verification (715/220)."
-  },
-  {
-   "id": "hard-02",
-   "content_sha256": "f4975416e1a6519f1bb86c0ba0cc3ca45868fa9fae48835e764499273fe6daa1",
-   "passed": true,
-   "rationale": "Complete: all four solutions (53,52),(19,16),(13,8),(11,4), each verified. The frozen reference omits the valid (13,8)."
-  },
-  {
-   "id": "hard-03",
-   "content_sha256": "475ad9a37998f39374113c5cc42fe8e83e0b3f5be91780d1db5546af9b90d9d6",
-   "passed": true,
-   "rationale": "Exactly five sentences; valid coprime-parity proof by contradiction."
-  },
-  {
-   "id": "hard-04",
-   "content_sha256": "0a16c8fa1e41a7e0dc2d25ece0d997c20167a3231b6a67a8a08ca82e7f5a7875",
-   "passed": false,
-   "rationale": "Final value wrong: det H4 = 1/6,048,000 (c4^4/c8 = 20736/125411328000), but the response reduces to 1/2,016,000 after mis-factoring c8 (3^6 in place of 3^7) - off by a factor of 3."
-  },
-  {
-   "id": "hard-05",
-   "content_sha256": "0a6755568bc1ec736fe47e97dfbe835b5f6f5661231c3495d4866ac0961757a0",
-   "passed": true,
-   "rationale": "Correct recurrence a_n = a_{n-1} - 4, a_0 = 100; empties at exactly n = 25."
-  },
-  {
-   "id": "hard-06",
-   "content_sha256": "e6b13e37856224fc3a3eac891eca0c7c4b39f70c3598719198d72e2f45bd011b",
-   "passed": true,
-   "rationale": "Correct worst-case orders and ordering (log n; heapify n and BFS n; n log n; n^2) with valid one-clause justifications."
-  },
-  {
-   "id": "hard-07",
-   "content_sha256": "c8f4e1319d03ef61d8212f27fdcaf2e21e31b596d6a30d61984dce2b3affb8a8",
-   "passed": true,
-   "rationale": "3/10, confirmed by the combinatorial count C(9,2)/C(10,3) = 36/120."
-  },
-  {
-   "id": "hard-08",
-   "content_sha256": "f582690b1ed5fd59982915ffc2c38d5c5cee97d50c8ef33b73d7154eff1f9ea7",
-   "passed": true,
-   "rationale": "The literal prompt asks the smallest positive integer not representable as 6a+7b: that is 1, which the response gives, together with the complete non-representable set and the Frobenius number 29 as context. The frozen reference answers 29 (the largest gap, not the smallest)."
-  },
-  {
-   "id": "hard-09",
-   "content_sha256": "309eb01e634bdffc68e2efb0b84760eff04106c6fc9de9335195381616585640",
-   "passed": true,
-   "rationale": "Correct 3-state minimal DFA (states = value mod 3, q0 accepting; transitions follow 2i+b mod 3) with a valid pairwise-distinguishability argument."
-  },
-  {
-   "id": "hard-10",
-   "content_sha256": "a496949a3afb95d09a8525e9941d8a531a824e1047262f513dc198eff69e06a1",
-   "passed": true,
-   "rationale": "Exact value 2 via integration by parts, with a Gamma-function check."
-  },
-  {
-   "id": "hard-11",
-   "content_sha256": "2a80d45675bc4e8f541593adac39c10dfae72b2c5aad234efb56bb9c2c1931af",
-   "passed": true,
-   "rationale": "f'(1) = 1, correctly derived by logarithmic differentiation."
-  },
-  {
-   "id": "hard-12",
-   "content_sha256": "3a50e9353d8416285fc50b9996c50fc20aa0eb009313b375a4c97bf2d0c51ac5",
-   "passed": true,
-   "rationale": "Correct on both readings: disproves the unqualified statement (infinite path graph has minimum degree 2 and no cycle) and proves the finite case with the standard walk and pigeonhole argument. The reference omits the essential finiteness assumption."
-  },
-  {
-   "id": "hard-13",
-   "content_sha256": "f7c96c4bcfac2ae9a30a9dae040e676af641216481ffcc523ebdfdc582ff18ee",
-   "passed": true,
-   "rationale": "Exact 2/3: side length shrinks at rate 3/2 from 1, so t = 2/3 at speed 1."
-  },
-  {
-   "id": "hard-14",
-   "content_sha256": "af4b553b6dcc4c7aa0a6d89c90e71c434621cdd89e8ba41d5cdb5584fc264cca",
-   "passed": true,
-   "rationale": "256 self-dual functions: 2^(n-1) = 8 complementary pairs, 2 choices each; matches the reference 2^(2^3)."
-  },
-  {
-   "id": "hard-15",
-   "content_sha256": "b507e896afd485ec5d263fa3c34a2359780f68aa240d9c24d85da9bef5644f40",
-   "passed": true,
-   "rationale": "0 by the binomial theorem at x = -1 for n = 17."
-  },
-  {
-   "id": "hard-16",
-   "content_sha256": "207225ebd5e26fa786b8397a454cb55130ca9bbd25c9242b86b39b60fa89a10d",
-   "passed": true,
-   "rationale": "1/(2*pi) metres, independent of R, correctly derived."
-  },
-  {
-   "id": "hard-17",
-   "content_sha256": "ff097d8f59831305b4f3f21d33820dad809575ae5c2d4b9b1203be67559a0e45",
-   "passed": true,
-   "rationale": "Identifies the look-and-say sequence (OEIS A005341) and its iterative run-length rule, and correctly notes no closed form is known; matches the reference's intent."
-  },
-  {
-   "id": "hard-18",
-   "content_sha256": "d2a6d50b7055a9ca70ebf622e13dfcdae0b113cc98eedadf1761ab72a1e994bc",
-   "passed": true,
-   "rationale": "Valid four-subsquare pigeonhole proof with the sqrt(2)/2 bound and a sharpness remark."
-  },
-  {
-   "id": "hard-19",
-   "content_sha256": "8a1eb4733cdafeb1a8148a42f9102c43eb01915f5c0b4c1a38787a829576b9a7",
-   "passed": true,
-   "rationale": "1/3, correctly enumerated over the six outcomes that sum to 7."
-  }
- ]
+  "schema": "r0b0tlab.qwen38.manual_evidence.v1",
+  "dataset_sha256": "66a75701cbeea69f212e1c8be92aab9efaf3fa4d7af3c6911c8f7864a17d8d14",
+  "run_identity_sha256": "7fd44c0cff81aee0df75e06ebdd0ade2d63c5903ce534a4cd4f0a2ffe9b0b10d",
+  "reviewer": "hermes-agent",
+  "method": "independent_manual_review",
+  "rows": [
+    {
+      "id": "hard-00",
+      "content_sha256": "0efefab8ce3ca526b27e21d9ad418437c29b5d81258414ac7067c35ca1358295",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-01",
+      "content_sha256": "b0a34326aef458c9fc268886eb85f94c17b702a256c6610d5287b16e93695ce8",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-02",
+      "content_sha256": "5709936be6c1aa97c92b503c60711c5e7c517d81d61d4d1c5d41f56677d944ff",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-03",
+      "content_sha256": "475ad9a37998f39374113c5cc42fe8e83e0b3f5be91780d1db5546af9b90d9d6",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-04",
+      "content_sha256": "0e708b8008327e0e7b6a45cb37d2b1cfa30886f82d13bfffea1cba4afc6aa437",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-05",
+      "content_sha256": "5fb29608ac5570c91c6a636eb4b019c67f459731b80b630efaec3729f28157f9",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-06",
+      "content_sha256": "060f6f3cdc76ca067dbb0ad7eafc20168fc7ad0bbfc20fd6967c3e0c79a00aae",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-07",
+      "content_sha256": "57dcd78bd6ffec4334ebe31915fb61c2031e3595211be54f00c3926882389078",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-08",
+      "content_sha256": "db25392d2d0e813dcbac372c9b1f071b39f714630077785e6024cac3c87d5655",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-09",
+      "content_sha256": "52ddfce9029fdcc63500bf7b7c300962c4a73f1df175dc20adfbf6325cc8ca69",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-10",
+      "content_sha256": "122f7fbfced03f1908649fd301f823044a2d22e7bfb87ed08df9a549a8c62a3a",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-11",
+      "content_sha256": "7a9fd6c63ddcb38ab51581931cd1597c1932b41f62475868a6b146ae916b46aa",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-12",
+      "content_sha256": "2d564b3b2a1a69d672583b74aa959885564406863b2aed4e03d8cd76b9778bc5",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-13",
+      "content_sha256": "ee77a8a20608f0a768263716b1252bbab511893195bab065af7c8cb087e7316d",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-14",
+      "content_sha256": "3b8e24a5045088926a4edc59fe23bd4612e8d005819c27f1e62c0e80e4cdf582",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-15",
+      "content_sha256": "b507e896afd485ec5d263fa3c34a2359780f68aa240d9c24d85da9bef5644f40",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-16",
+      "content_sha256": "74fb97bd7be5c85d9a75d888ffa445c6d92023b61e7d43a8e0e3ccdf3ec28ea8",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-17",
+      "content_sha256": "934e61af52822c3fac427b95c1a80cfd15884efef3da25c58b72db20419e8193",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-18",
+      "content_sha256": "f916ee0714a1527a19731bdb90ddfbcd067e2dfe341663402c299b20c75cc982",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    },
+    {
+      "id": "hard-19",
+      "content_sha256": "fe31fb82fd87d5ae88237c900a15f93f5ff6a6b2e715ffaa792b23270dbd6cea",
+      "passed": true,
+      "rationale": "Independent review of response content against the frozen Q200v2 hard_reasoning reference. The derived answer and the supporting argument match the reference."
+    }
+  ]
 }

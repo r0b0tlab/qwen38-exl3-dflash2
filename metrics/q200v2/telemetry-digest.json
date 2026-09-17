@@ -1,33 +1,40 @@
 {
-  "samples": 420,
-  "span_s": 848,
+  "interval_s": 2,
+  "n_samples": 1619,
+  "n_load": 1074,
+  "span_s": 3277,
   "load_only": {
     "power_w": {
-      "mean": 333.44,
-      "max": 349.57
+      "mean": 336.4,
+      "max": 351.8,
+      "min": 21.9
     },
     "temp_c": {
-      "mean": 54.38,
-      "max": 59.0
+      "mean": 58.6,
+      "max": 66.0,
+      "min": 31.0
     },
     "util_pct": {
-      "mean": 91.94,
-      "max": 100.0
+      "mean": 98.5,
+      "max": 100.0,
+      "min": 1.0
     },
     "gfx_clock_mhz": {
-      "mean": 1696.11,
-      "max": 1980.0
+      "mean": 1754.2,
+      "max": 1995.0,
+      "min": 210.0
     },
     "vram_mib": {
-      "mean": 21183.07,
-      "max": 21192.0
+      "mean": 22299.3,
+      "max": 23404.0,
+      "min": 16.0
     }
   },
-  "min_mem_available_gib": 44.19,
-  "throttle_states": {
-    "0x0000000000000000": 10,
-    "0x0000000000000004": 401,
-    "0x0000000000000024": 1,
-    "0x0000000000000001": 8
-  }
+  "min_mem_available_kb": 41568452.0,
+  "throttle_values": [
+    "0x0000000000000000",
+    "0x0000000000000001",
+    "0x0000000000000004"
+  ],
+  "note": "throttle 0x1 = gpu idle clocks; 0x4 = software power cap (3090 350W). No HW thermal slowdown bit 0x40."
 }

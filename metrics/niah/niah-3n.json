@@ -13,7 +13,7 @@
   "target_tokens": 262080,
   "prompt_tokens": 262080,
   "completion_tokens": 143,
-  "elapsed_s": 123.3,
+  "elapsed_s": 122.8,
   "finish_reason": "stop",
   "last_code": "R0B0-RAVEN-9158",
   "passed": true,

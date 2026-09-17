@@ -10,26 +10,26 @@
     "transport failure: ifeval-023",
     "missing/invalid finish_reason: ifeval-023"
   ],
-  "correct_count": 171,
+  "correct_count": 172,
   "dataset_count": 180,
-  "dataset_sha256": "74623ab9b075120cd6f7a93059cc16d8817a6039dd20118b8f0350279f8b1ed6",
+  "dataset_sha256": "66a75701cbeea69f212e1c8be92aab9efaf3fa4d7af3c6911c8f7864a17d8d14",
   "families": {
     "gsm8k": {
-      "accuracy_pct": 98.75,
-      "correct": 79,
+      "accuracy_pct": 97.5,
+      "correct": 78,
       "grade_complete": 80,
       "grader_errors": 0,
-      "incorrect": 1,
+      "incorrect": 2,
       "n": 80,
       "transported": 80,
       "ungraded": 0
     },
     "hard_reasoning": {
-      "accuracy_pct": 95.0,
-      "correct": 19,
+      "accuracy_pct": 100.0,
+      "correct": 20,
       "grade_complete": 20,
       "grader_errors": 0,
-      "incorrect": 1,
+      "incorrect": 0,
       "n": 20,
       "transported": 20,
       "ungraded": 0
@@ -45,11 +45,11 @@
       "ungraded": 0
     },
     "ifeval": {
-      "accuracy_pct": 84.62,
-      "correct": 33,
+      "accuracy_pct": 87.18,
+      "correct": 34,
       "grade_complete": 39,
       "grader_errors": 0,
-      "incorrect": 6,
+      "incorrect": 5,
       "n": 40,
       "transported": 39,
       "ungraded": 1
@@ -58,20 +58,20 @@
   "grade_complete": false,
   "grader_error_count": 0,
   "image_id": "sha256:caf1a95b886e50be2218621a79057ce68897f55497721c1344b3c061bbca1a8e",
-  "incorrect_count": 8,
+  "incorrect_count": 7,
   "manual_evidence": {
     "method": "independent_manual_review",
-    "path": "/home/am/r0b0bench-q200v2/runs/q200v2-text-20260916/manual-evidence.json",
-    "reviewer": "hermes-agent (independent LLM review, 2026-09-16)",
+    "path": "/home/am/r0b0bench-q200v2/runs/q200v2-native-container-20260917/manual-evidence.json",
+    "reviewer": "hermes-agent",
     "row_count": 20,
-    "run_identity_sha256": "c649677da6e0e64b0a79f2147000b48d07ff5791704f5e616384bf9a23f0d7c4",
-    "sha256": "af5157fb95e0787896a87ab53ad386cd94ef67f4355092ae60e2a8bfb7e95e9e"
+    "run_identity_sha256": "7fd44c0cff81aee0df75e06ebdd0ade2d63c5903ce534a4cd4f0a2ffe9b0b10d",
+    "sha256": "306ca3cf621b9957ec2982e438f736ab31535799ced6da734355683171cf771c"
   },
   "model": "qwen38-27b-exl3-dflash2",
   "not_admitted_count": 0,
   "not_admitted_event": null,
   "not_admitted_ids": [],
-  "profile_id": "local-rtx3090-exl3-4bpw",
+  "profile_id": "local-rtx3090-exl3-4bpw-native",
   "quality_policy": {
     "applied": false,
     "name": "external_baseline_comparator_required",
@@ -90,8 +90,8 @@
     "max_observed_completion_tokens": 8192
   },
   "rows": 180,
-  "run_id": "q200v2-local-exl3dflash2-20260916",
-  "run_identity_sha256": "c649677da6e0e64b0a79f2147000b48d07ff5791704f5e616384bf9a23f0d7c4",
+  "run_id": "q200v2-native-container-20260917",
+  "run_identity_sha256": "7fd44c0cff81aee0df75e06ebdd0ade2d63c5903ce534a4cd4f0a2ffe9b0b10d",
   "schema": "r0b0tlab.qwen38.quality_text_180_run.v2",
   "status": "INCOMPLETE",
   "transport_complete": false,
