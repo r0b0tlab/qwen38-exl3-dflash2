@@ -64,8 +64,7 @@ COPY container/entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
 RUN useradd --create-home --uid 10001 runner \
-    && mkdir -p /models && chown runner:runner /models \
-    && chown -R runner:runner /opt/venv /opt/uv-python /opt/exllamav3
+    && mkdir -p /models && chown runner:runner /models
 USER runner
 
 ENV PATH="/opt/venv/bin:${PATH}" \
